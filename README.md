@@ -11,7 +11,7 @@ player 1 & player 2. The players take chance / turns to play the game. One of th
 
 But this game has been played as a stand-alone game.
 
-'''
+---
 
 Game Design
 ==========
@@ -52,7 +52,7 @@ N player league match.
 * If the Nth player loses in first league match, he / she is out of game.
 * If the Nth player wins both the matches, he / she is into the game.
 
-'''
+---
 
 Game environment
 ================
@@ -77,7 +77,7 @@ The statistics & reports / results page will be made available on web / html pag
 
 Planning to use Apache Thrift RPC service / write own stubs.
 
-'''
+---
 
 Areas of DOS application
 ========================
@@ -85,14 +85,15 @@ Areas of DOS application
 While this project is aimed to be submitted as mini-project for the Distributed operating systems courese,
 it is very imperative to understand, what does this project demands, w.r.t DOS skilss.
 
-[X] Server handling parallelism.
-[X] Shared resource handling across multiple players.
-[X] Load balancing.
-[X] Transaction handling w.r.t Game co-ordinator.
-[X] Applications of good performance algorithms in allocating resources / players during heavy load.
+- [X] Server handling parallelism.
+- [X] Shared resource handling across multiple players.
+- [X] Load balancing.
+- [X] Transaction handling w.r.t Game co-ordinator.
+- [X] Applications of good performance algorithms in allocating resources / players during heavy load.
 
 
-'''
+---
+
 kspviswa.
 ---------
 www.kspviswa.wordpress.com [Blog]
