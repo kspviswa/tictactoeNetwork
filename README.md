@@ -19,14 +19,14 @@ Game Design
 As part of mini project in distributed operating systems course, I had planned to take this game to next level.
 Following are the enhancements, that are made to make this game more fun.
 
--[x] N number of players can take the game.
---[x] How ever if the Nth player is such that N mod 2 == 1, then Nth player has to wait for his / her partner.
---[x] As soon, a pair is formed, the game is started. The waiting partner will be notified upon arival of their pairs.
+- [X] N number of players can take the game.
+-- [X] How ever if the Nth player is such that N mod 2 == 1, then Nth player has to wait for his / her partner.
+-- [X] As soon, a pair is formed, the game is started. The waiting partner will be notified upon arival of their pairs.
 
--[x] When a player gets into the game, he / she registers their Name, IP with the game co-oridinator.
--[x] Game co-ordinator sits on a centralised place / server who monitors & facilites all the matches.
+- [X] When a player gets into the game, he / she registers their Name, IP with the game co-oridinator.
+- [X] Game co-ordinator sits on a centralised place / server who monitors & facilites all the matches.
 
--[x] Game co-ordinator can be started in either *Knock-out* or *Championship mode*.
+- [X] Game co-ordinator can be started in either *Knock-out* or *Championship mode*.
 
 Knock-out mode
 -------------
@@ -85,11 +85,11 @@ Areas of DOS application
 While this project is aimed to be submitted as mini-project for the Distributed operating systems courese,
 it is very imperative to understand, what does this project demands, w.r.t DOS skilss.
 
-[x] Server handling parallelism.
-[x] Shared resource handling across multiple players.
-[x] Load balancing.
-[x] Transaction handling w.r.t Game co-ordinator.
-[x] Applications of good performance algorithms in allocating resources / players during heavy load.
+[X] Server handling parallelism.
+[X] Shared resource handling across multiple players.
+[X] Load balancing.
+[X] Transaction handling w.r.t Game co-ordinator.
+[X] Applications of good performance algorithms in allocating resources / players during heavy load.
 
 
 '''
