@@ -20,8 +20,9 @@ As part of mini project in distributed operating systems course, I had planned t
 Following are the enhancements, that are made to make this game more fun.
 
 - [X] N number of players can take the game.
-.. However if the Nth player is such that N mod 2 == 1, then Nth player has to wait for his / her partner.
-.. As soon, a pair is formed, the game is started. The waiting partner will be notified upon arival of their pairs.
+
+* However if the Nth player is such that N mod 2 == 1, then Nth player has to wait for his / her partner.
+* As soon, a pair is formed, the game is started. The waiting partner will be notified upon arival of their pairs.
 
 - [X] When a player gets into the game, he / she registers their Name, IP with the game co-oridinator.
 - [X] Game co-ordinator sits on a centralised place / server who monitors & facilites all the matches.
