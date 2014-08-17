@@ -95,6 +95,18 @@ it is very imperative to understand, what does this project demands, w.r.t DOS s
 
 ---
 
+Fun side of project : Playing with game polices
+===============================================
+
+You can play with game policies for fun. These policies can be made as dynamic and should be pushed on demand.
+
+Policy examples
+---------------
+
+. If any player doesn't make a move within stipulated X time, then the chance will be given to next player
+.. As a power / bonus point, this move can be auto suggested by the system.
+... Here you can play with algorithms to suggest the best possible move, analysing the present game.
+
 kspviswa.
 ---------
 www.kspviswa.wordpress.com [Blog]
