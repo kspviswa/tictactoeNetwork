@@ -1,0 +1,30 @@
+package tictac;
+
+message tictacpacket {
+	required int32 Ipv4 = 1;
+	
+	enum MsgType {
+		REGISTER=1;
+		START=2;
+		RESUME=3;
+		OK=4;
+		SNAPSHOTGET=5;
+		SNAPSHOTPUT=6;
+		TERMINATE=7;
+		END=8;
+		MOVE=9;
+		}
+		
+	required MsgType msgType = 2;
+	optional string state = 3;
+	optional int32 Ipv4Opp = 4;
+	
+	enum EndType {
+		WON=1;
+		LOST=2;
+		DRAW=3;
+		}
+	
+	optional EndType endType = 5;
+	optional int32 nPos = 6;
+}

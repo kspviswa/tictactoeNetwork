@@ -23,27 +23,12 @@ class CConn;
 class CPlayer
 {
 public:
-	string getName();
-	void setName(string sNameStr);
-	string getIPString();
-	void setIPString(unsigned long nIPv4);
-	void registerUser(CMatch *pMatchHandle);
-	void registerConnection(CConn *pConn);
-
-	CMatch* getMatchHandle();
-	CConn* getConnHandle();
-
-	vectLong::iterator getPreviousState();
-	void fillPreviousState(vectLong *pDstVect);
-	void saveCurrentState(vectLong *pCurrState, unsigned long nSnapshotTime);
-
-public:
 	string sName;
 	string sIP;
 	unsigned long nIPv4;
 	CMatch *pMatch;
 	CConn connObject;
-	vectLong nState;
+	string strState;
 	unsigned long nSnapshotTime;
 };
 
@@ -65,12 +50,10 @@ typedef enum EMatchState eMatchState;
 class CMatch
 {
 public:
-	void initMatch(vPlayerHandles *pPlayers);
-	void flagMatchState(eMatchState matchState);
-
-public:
-vPlayerHandles m_Players;
-eMatchState m_MatchState;
+	CPlayer* m_hPlayer1;
+	CPlayer* m_hPlayer2;
+	eMatchState m_MatchState;
+	unsigned long nMatchId;
 };
 
 class CMatchStatistics
@@ -89,12 +72,25 @@ public:
 
 class CController
 {
-public:
-	map<unsigned long, CMatch*> _mapMatches;
-	map<unsigned long, CMatchStatistics> _mapStatistics;
+public :
+	unsigned long FindPlayerMatch(unsigned long nIPv4);
+	CPlayer* returnPlayer(unsigned long nIndex);
+	unsigned long FindMatchByPlayer(unsigned long nIPv4);
+	CMatchStatistics* returnStatistics(unsigned long nMatchId);
+	void returnHtmlMatchStatistics();
 
-eMatchState eState;
-CPlayer* pWinningPlayer;
+public:
+	// index is incrementing number
+	map<unsigned long, CMatch*> _mapMatches;
+	pthread_mutex_t lockMatches;
+
+	// index is match id of _mapMatches
+	map<unsigned long, CMatchStatistics*> _mapStatistics;
+	pthread_mutex_t lockStatistics;
+
+	// index is IPv4 of connection
+	map<unsigned long, CPlayer*> _mapPlayers;
+	pthread_mutex_t lockPlayers;
 };
 
 class CConn
