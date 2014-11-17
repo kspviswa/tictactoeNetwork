@@ -13,9 +13,18 @@
 #include <map>
 #include <algorithm>
 
+#include "tictac.h"
+
 using namespace std;
+using namespace tictac;
 
 typedef vector<unsigned long> vectLong;
+
+#define SMARTPEER_CLIENT_PORT 9000
+#define SMARTPEER_SERVER_PORT 10000
+
+#define INIT_MATCH 1
+#define ATTACH_MATCH 2
 
 class CMatch;
 class CConn;
@@ -73,15 +82,37 @@ public:
 class CController
 {
 public :
-	unsigned long FindPlayerMatch(unsigned long nIPv4);
+	int init();
+
+	int initOrAttachNewMatch(CPlayer *pPlayer);
+	long FindPlayerMatch(unsigned long nIPv4);
 	CPlayer* returnPlayer(unsigned long nIndex);
 	unsigned long FindMatchByPlayer(unsigned long nIPv4);
 	CMatchStatistics* returnStatistics(unsigned long nMatchId);
 	void returnHtmlMatchStatistics();
+	void attachPlayer(CPlayer *pPlayer);
+
+	// public APIs
+	unsigned long doSnapshotService();
+	unsigned long doSocketListen();
+	unsigned long doReporting();
+
+	void processIncomingMessage(tictacpacket thePacket);
+	long parsePacket(unsigned char *pSrc, unsigned long nLen);
+	int sendResponse(tictacpacket *pSrcPacket);
+	int processRegisterMessage(tictacpacket *pPacket);
+	int processSnapshotMessage(tictacpacket *pPacket);
+	int processTerminateMessage(tictacpacket *pPacket);
+	int processEndMessage(tictacpacket *pPacket);
+
+	int sendPacketToClient(tictacpacket *pPacket);
 
 public:
 	// index is incrementing number
 	map<unsigned long, CMatch*> _mapMatches;
+	//pointer to new match
+	CMatch *pNewMatch;
+
 	pthread_mutex_t lockMatches;
 
 	// index is match id of _mapMatches
@@ -91,6 +122,7 @@ public:
 	// index is IPv4 of connection
 	map<unsigned long, CPlayer*> _mapPlayers;
 	pthread_mutex_t lockPlayers;
+
 };
 
 class CConn

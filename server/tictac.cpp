@@ -36,9 +36,10 @@ void protobuf_AssignDesc_tictac_2eproto() {
       "tictac.proto");
   GOOGLE_CHECK(file != NULL);
   tictacpacket_descriptor_ = file->message_type(0);
-  static const int tictacpacket_offsets_[6] = {
+  static const int tictacpacket_offsets_[7] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(tictacpacket, ipv4_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(tictacpacket, msgtype_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(tictacpacket, playername_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(tictacpacket, state_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(tictacpacket, ipv4opp_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(tictacpacket, endtype_),
@@ -87,15 +88,16 @@ void protobuf_AddDesc_tictac_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-    "\n\014tictac.proto\022\006tictac\"\314\002\n\014tictacpacket\022"
+    "\n\014tictac.proto\022\006tictac\"\340\002\n\014tictacpacket\022"
     "\014\n\004Ipv4\030\001 \002(\005\022-\n\007msgType\030\002 \002(\0162\034.tictac."
-    "tictacpacket.MsgType\022\r\n\005state\030\003 \001(\t\022\017\n\007I"
-    "pv4Opp\030\004 \001(\005\022-\n\007endType\030\005 \001(\0162\034.tictac.t"
-    "ictacpacket.EndType\022\014\n\004nPos\030\006 \001(\005\"z\n\007Msg"
-    "Type\022\014\n\010REGISTER\020\001\022\t\n\005START\020\002\022\n\n\006RESUME\020"
-    "\003\022\006\n\002OK\020\004\022\017\n\013SNAPSHOTGET\020\005\022\017\n\013SNAPSHOTPU"
-    "T\020\006\022\r\n\tTERMINATE\020\007\022\007\n\003END\020\010\022\010\n\004MOVE\020\t\"&\n"
-    "\007EndType\022\007\n\003WON\020\001\022\010\n\004LOST\020\002\022\010\n\004DRAW\020\003", 357);
+    "tictacpacket.MsgType\022\022\n\nplayerName\030\003 \001(\t"
+    "\022\r\n\005state\030\004 \001(\t\022\017\n\007Ipv4Opp\030\005 \001(\005\022-\n\007endT"
+    "ype\030\006 \001(\0162\034.tictac.tictacpacket.EndType\022"
+    "\014\n\004nPos\030\007 \001(\005\"z\n\007MsgType\022\014\n\010REGISTER\020\001\022\t"
+    "\n\005START\020\002\022\n\n\006RESUME\020\003\022\006\n\002OK\020\004\022\017\n\013SNAPSHO"
+    "TGET\020\005\022\017\n\013SNAPSHOTPUT\020\006\022\r\n\tTERMINATE\020\007\022\007"
+    "\n\003END\020\010\022\010\n\004MOVE\020\t\"&\n\007EndType\022\007\n\003WON\020\001\022\010\n"
+    "\004LOST\020\002\022\010\n\004DRAW\020\003", 377);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "tictac.proto", &protobuf_RegisterTypes);
   tictacpacket::default_instance_ = new tictacpacket();
@@ -173,6 +175,7 @@ const int tictacpacket::EndType_ARRAYSIZE;
 #ifndef _MSC_VER
 const int tictacpacket::kIpv4FieldNumber;
 const int tictacpacket::kMsgTypeFieldNumber;
+const int tictacpacket::kPlayerNameFieldNumber;
 const int tictacpacket::kStateFieldNumber;
 const int tictacpacket::kIpv4OppFieldNumber;
 const int tictacpacket::kEndTypeFieldNumber;
@@ -200,6 +203,7 @@ void tictacpacket::SharedCtor() {
   _cached_size_ = 0;
   ipv4_ = 0;
   msgtype_ = 1;
+  playername_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   state_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   ipv4opp_ = 0;
   endtype_ = 1;
@@ -213,6 +217,9 @@ tictacpacket::~tictacpacket() {
 }
 
 void tictacpacket::SharedDtor() {
+  if (playername_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    delete playername_;
+  }
   if (state_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
     delete state_;
   }
@@ -242,9 +249,14 @@ tictacpacket* tictacpacket::New() const {
 }
 
 void tictacpacket::Clear() {
-  if (_has_bits_[0 / 32] & 63) {
+  if (_has_bits_[0 / 32] & 127) {
     ipv4_ = 0;
     msgtype_ = 1;
+    if (has_playername()) {
+      if (playername_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+        playername_->clear();
+      }
+    }
     if (has_state()) {
       if (state_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
         state_->clear();
@@ -298,13 +310,30 @@ bool tictacpacket::MergePartialFromCodedStream(
         } else {
           goto handle_unusual;
         }
-        if (input->ExpectTag(26)) goto parse_state;
+        if (input->ExpectTag(26)) goto parse_playerName;
         break;
       }
 
-      // optional string state = 3;
+      // optional string playerName = 3;
       case 3: {
         if (tag == 26) {
+         parse_playerName:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+                input, this->mutable_playername()));
+          ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
+            this->playername().data(), this->playername().length(),
+            ::google::protobuf::internal::WireFormat::PARSE,
+            "playername");
+        } else {
+          goto handle_unusual;
+        }
+        if (input->ExpectTag(34)) goto parse_state;
+        break;
+      }
+
+      // optional string state = 4;
+      case 4: {
+        if (tag == 34) {
          parse_state:
           DO_(::google::protobuf::internal::WireFormatLite::ReadString(
                 input, this->mutable_state()));
@@ -315,13 +344,13 @@ bool tictacpacket::MergePartialFromCodedStream(
         } else {
           goto handle_unusual;
         }
-        if (input->ExpectTag(32)) goto parse_Ipv4Opp;
+        if (input->ExpectTag(40)) goto parse_Ipv4Opp;
         break;
       }
 
-      // optional int32 Ipv4Opp = 4;
-      case 4: {
-        if (tag == 32) {
+      // optional int32 Ipv4Opp = 5;
+      case 5: {
+        if (tag == 40) {
          parse_Ipv4Opp:
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
@@ -330,13 +359,13 @@ bool tictacpacket::MergePartialFromCodedStream(
         } else {
           goto handle_unusual;
         }
-        if (input->ExpectTag(40)) goto parse_endType;
+        if (input->ExpectTag(48)) goto parse_endType;
         break;
       }
 
-      // optional .tictac.tictacpacket.EndType endType = 5;
-      case 5: {
-        if (tag == 40) {
+      // optional .tictac.tictacpacket.EndType endType = 6;
+      case 6: {
+        if (tag == 48) {
          parse_endType:
           int value;
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
@@ -345,18 +374,18 @@ bool tictacpacket::MergePartialFromCodedStream(
           if (::tictac::tictacpacket_EndType_IsValid(value)) {
             set_endtype(static_cast< ::tictac::tictacpacket_EndType >(value));
           } else {
-            mutable_unknown_fields()->AddVarint(5, value);
+            mutable_unknown_fields()->AddVarint(6, value);
           }
         } else {
           goto handle_unusual;
         }
-        if (input->ExpectTag(48)) goto parse_nPos;
+        if (input->ExpectTag(56)) goto parse_nPos;
         break;
       }
 
-      // optional int32 nPos = 6;
-      case 6: {
-        if (tag == 48) {
+      // optional int32 nPos = 7;
+      case 7: {
+        if (tag == 56) {
          parse_nPos:
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
@@ -405,30 +434,40 @@ void tictacpacket::SerializeWithCachedSizes(
       2, this->msgtype(), output);
   }
 
-  // optional string state = 3;
+  // optional string playerName = 3;
+  if (has_playername()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
+      this->playername().data(), this->playername().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE,
+      "playername");
+    ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
+      3, this->playername(), output);
+  }
+
+  // optional string state = 4;
   if (has_state()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
       this->state().data(), this->state().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE,
       "state");
     ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
-      3, this->state(), output);
+      4, this->state(), output);
   }
 
-  // optional int32 Ipv4Opp = 4;
+  // optional int32 Ipv4Opp = 5;
   if (has_ipv4opp()) {
-    ::google::protobuf::internal::WireFormatLite::WriteInt32(4, this->ipv4opp(), output);
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(5, this->ipv4opp(), output);
   }
 
-  // optional .tictac.tictacpacket.EndType endType = 5;
+  // optional .tictac.tictacpacket.EndType endType = 6;
   if (has_endtype()) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
-      5, this->endtype(), output);
+      6, this->endtype(), output);
   }
 
-  // optional int32 nPos = 6;
+  // optional int32 nPos = 7;
   if (has_npos()) {
-    ::google::protobuf::internal::WireFormatLite::WriteInt32(6, this->npos(), output);
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(7, this->npos(), output);
   }
 
   if (!unknown_fields().empty()) {
@@ -452,7 +491,18 @@ void tictacpacket::SerializeWithCachedSizes(
       2, this->msgtype(), target);
   }
 
-  // optional string state = 3;
+  // optional string playerName = 3;
+  if (has_playername()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
+      this->playername().data(), this->playername().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE,
+      "playername");
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
+        3, this->playername(), target);
+  }
+
+  // optional string state = 4;
   if (has_state()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
       this->state().data(), this->state().length(),
@@ -460,23 +510,23 @@ void tictacpacket::SerializeWithCachedSizes(
       "state");
     target =
       ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
-        3, this->state(), target);
+        4, this->state(), target);
   }
 
-  // optional int32 Ipv4Opp = 4;
+  // optional int32 Ipv4Opp = 5;
   if (has_ipv4opp()) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(4, this->ipv4opp(), target);
+    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(5, this->ipv4opp(), target);
   }
 
-  // optional .tictac.tictacpacket.EndType endType = 5;
+  // optional .tictac.tictacpacket.EndType endType = 6;
   if (has_endtype()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
-      5, this->endtype(), target);
+      6, this->endtype(), target);
   }
 
-  // optional int32 nPos = 6;
+  // optional int32 nPos = 7;
   if (has_npos()) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(6, this->npos(), target);
+    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(7, this->npos(), target);
   }
 
   if (!unknown_fields().empty()) {
@@ -504,27 +554,34 @@ int tictacpacket::ByteSize() const {
         ::google::protobuf::internal::WireFormatLite::EnumSize(this->msgtype());
     }
 
-    // optional string state = 3;
+    // optional string playerName = 3;
+    if (has_playername()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::StringSize(
+          this->playername());
+    }
+
+    // optional string state = 4;
     if (has_state()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::StringSize(
           this->state());
     }
 
-    // optional int32 Ipv4Opp = 4;
+    // optional int32 Ipv4Opp = 5;
     if (has_ipv4opp()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::Int32Size(
           this->ipv4opp());
     }
 
-    // optional .tictac.tictacpacket.EndType endType = 5;
+    // optional .tictac.tictacpacket.EndType endType = 6;
     if (has_endtype()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::EnumSize(this->endtype());
     }
 
-    // optional int32 nPos = 6;
+    // optional int32 nPos = 7;
     if (has_npos()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::Int32Size(
@@ -564,6 +621,9 @@ void tictacpacket::MergeFrom(const tictacpacket& from) {
     if (from.has_msgtype()) {
       set_msgtype(from.msgtype());
     }
+    if (from.has_playername()) {
+      set_playername(from.playername());
+    }
     if (from.has_state()) {
       set_state(from.state());
     }
@@ -602,6 +662,7 @@ void tictacpacket::Swap(tictacpacket* other) {
   if (other != this) {
     std::swap(ipv4_, other->ipv4_);
     std::swap(msgtype_, other->msgtype_);
+    std::swap(playername_, other->playername_);
     std::swap(state_, other->state_);
     std::swap(ipv4opp_, other->ipv4opp_);
     std::swap(endtype_, other->endtype_);

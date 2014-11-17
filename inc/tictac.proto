@@ -16,8 +16,9 @@ message tictacpacket {
 		}
 		
 	required MsgType msgType = 2;
-	optional string state = 3;
-	optional int32 Ipv4Opp = 4;
+	optional string playerName = 3;
+	optional string state = 4;
+	optional int32 Ipv4Opp = 5;
 	
 	enum EndType {
 		WON=1;
@@ -25,6 +26,6 @@ message tictacpacket {
 		DRAW=3;
 		}
 	
-	optional EndType endType = 5;
-	optional int32 nPos = 6;
+	optional EndType endType = 6;
+	optional int32 nPos = 7;
 }

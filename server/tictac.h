@@ -207,10 +207,22 @@ class tictacpacket : public ::google::protobuf::Message {
   inline ::tictac::tictacpacket_MsgType msgtype() const;
   inline void set_msgtype(::tictac::tictacpacket_MsgType value);
 
-  // optional string state = 3;
+  // optional string playerName = 3;
+  inline bool has_playername() const;
+  inline void clear_playername();
+  static const int kPlayerNameFieldNumber = 3;
+  inline const ::std::string& playername() const;
+  inline void set_playername(const ::std::string& value);
+  inline void set_playername(const char* value);
+  inline void set_playername(const char* value, size_t size);
+  inline ::std::string* mutable_playername();
+  inline ::std::string* release_playername();
+  inline void set_allocated_playername(::std::string* playername);
+
+  // optional string state = 4;
   inline bool has_state() const;
   inline void clear_state();
-  static const int kStateFieldNumber = 3;
+  static const int kStateFieldNumber = 4;
   inline const ::std::string& state() const;
   inline void set_state(const ::std::string& value);
   inline void set_state(const char* value);
@@ -219,24 +231,24 @@ class tictacpacket : public ::google::protobuf::Message {
   inline ::std::string* release_state();
   inline void set_allocated_state(::std::string* state);
 
-  // optional int32 Ipv4Opp = 4;
+  // optional int32 Ipv4Opp = 5;
   inline bool has_ipv4opp() const;
   inline void clear_ipv4opp();
-  static const int kIpv4OppFieldNumber = 4;
+  static const int kIpv4OppFieldNumber = 5;
   inline ::google::protobuf::int32 ipv4opp() const;
   inline void set_ipv4opp(::google::protobuf::int32 value);
 
-  // optional .tictac.tictacpacket.EndType endType = 5;
+  // optional .tictac.tictacpacket.EndType endType = 6;
   inline bool has_endtype() const;
   inline void clear_endtype();
-  static const int kEndTypeFieldNumber = 5;
+  static const int kEndTypeFieldNumber = 6;
   inline ::tictac::tictacpacket_EndType endtype() const;
   inline void set_endtype(::tictac::tictacpacket_EndType value);
 
-  // optional int32 nPos = 6;
+  // optional int32 nPos = 7;
   inline bool has_npos() const;
   inline void clear_npos();
-  static const int kNPosFieldNumber = 6;
+  static const int kNPosFieldNumber = 7;
   inline ::google::protobuf::int32 npos() const;
   inline void set_npos(::google::protobuf::int32 value);
 
@@ -246,6 +258,8 @@ class tictacpacket : public ::google::protobuf::Message {
   inline void clear_has_ipv4();
   inline void set_has_msgtype();
   inline void clear_has_msgtype();
+  inline void set_has_playername();
+  inline void clear_has_playername();
   inline void set_has_state();
   inline void clear_has_state();
   inline void set_has_ipv4opp();
@@ -261,6 +275,7 @@ class tictacpacket : public ::google::protobuf::Message {
   mutable int _cached_size_;
   ::google::protobuf::int32 ipv4_;
   int msgtype_;
+  ::std::string* playername_;
   ::std::string* state_;
   ::google::protobuf::int32 ipv4opp_;
   int endtype_;
@@ -328,15 +343,91 @@ inline void tictacpacket::set_msgtype(::tictac::tictacpacket_MsgType value) {
   // @@protoc_insertion_point(field_set:tictac.tictacpacket.msgType)
 }
 
-// optional string state = 3;
-inline bool tictacpacket::has_state() const {
+// optional string playerName = 3;
+inline bool tictacpacket::has_playername() const {
   return (_has_bits_[0] & 0x00000004u) != 0;
 }
-inline void tictacpacket::set_has_state() {
+inline void tictacpacket::set_has_playername() {
   _has_bits_[0] |= 0x00000004u;
 }
-inline void tictacpacket::clear_has_state() {
+inline void tictacpacket::clear_has_playername() {
   _has_bits_[0] &= ~0x00000004u;
+}
+inline void tictacpacket::clear_playername() {
+  if (playername_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    playername_->clear();
+  }
+  clear_has_playername();
+}
+inline const ::std::string& tictacpacket::playername() const {
+  // @@protoc_insertion_point(field_get:tictac.tictacpacket.playerName)
+  return *playername_;
+}
+inline void tictacpacket::set_playername(const ::std::string& value) {
+  set_has_playername();
+  if (playername_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    playername_ = new ::std::string;
+  }
+  playername_->assign(value);
+  // @@protoc_insertion_point(field_set:tictac.tictacpacket.playerName)
+}
+inline void tictacpacket::set_playername(const char* value) {
+  set_has_playername();
+  if (playername_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    playername_ = new ::std::string;
+  }
+  playername_->assign(value);
+  // @@protoc_insertion_point(field_set_char:tictac.tictacpacket.playerName)
+}
+inline void tictacpacket::set_playername(const char* value, size_t size) {
+  set_has_playername();
+  if (playername_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    playername_ = new ::std::string;
+  }
+  playername_->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:tictac.tictacpacket.playerName)
+}
+inline ::std::string* tictacpacket::mutable_playername() {
+  set_has_playername();
+  if (playername_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    playername_ = new ::std::string;
+  }
+  // @@protoc_insertion_point(field_mutable:tictac.tictacpacket.playerName)
+  return playername_;
+}
+inline ::std::string* tictacpacket::release_playername() {
+  clear_has_playername();
+  if (playername_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    return NULL;
+  } else {
+    ::std::string* temp = playername_;
+    playername_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    return temp;
+  }
+}
+inline void tictacpacket::set_allocated_playername(::std::string* playername) {
+  if (playername_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
+    delete playername_;
+  }
+  if (playername) {
+    set_has_playername();
+    playername_ = playername;
+  } else {
+    clear_has_playername();
+    playername_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  }
+  // @@protoc_insertion_point(field_set_allocated:tictac.tictacpacket.playerName)
+}
+
+// optional string state = 4;
+inline bool tictacpacket::has_state() const {
+  return (_has_bits_[0] & 0x00000008u) != 0;
+}
+inline void tictacpacket::set_has_state() {
+  _has_bits_[0] |= 0x00000008u;
+}
+inline void tictacpacket::clear_has_state() {
+  _has_bits_[0] &= ~0x00000008u;
 }
 inline void tictacpacket::clear_state() {
   if (state_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
@@ -404,15 +495,15 @@ inline void tictacpacket::set_allocated_state(::std::string* state) {
   // @@protoc_insertion_point(field_set_allocated:tictac.tictacpacket.state)
 }
 
-// optional int32 Ipv4Opp = 4;
+// optional int32 Ipv4Opp = 5;
 inline bool tictacpacket::has_ipv4opp() const {
-  return (_has_bits_[0] & 0x00000008u) != 0;
+  return (_has_bits_[0] & 0x00000010u) != 0;
 }
 inline void tictacpacket::set_has_ipv4opp() {
-  _has_bits_[0] |= 0x00000008u;
+  _has_bits_[0] |= 0x00000010u;
 }
 inline void tictacpacket::clear_has_ipv4opp() {
-  _has_bits_[0] &= ~0x00000008u;
+  _has_bits_[0] &= ~0x00000010u;
 }
 inline void tictacpacket::clear_ipv4opp() {
   ipv4opp_ = 0;
@@ -428,15 +519,15 @@ inline void tictacpacket::set_ipv4opp(::google::protobuf::int32 value) {
   // @@protoc_insertion_point(field_set:tictac.tictacpacket.Ipv4Opp)
 }
 
-// optional .tictac.tictacpacket.EndType endType = 5;
+// optional .tictac.tictacpacket.EndType endType = 6;
 inline bool tictacpacket::has_endtype() const {
-  return (_has_bits_[0] & 0x00000010u) != 0;
+  return (_has_bits_[0] & 0x00000020u) != 0;
 }
 inline void tictacpacket::set_has_endtype() {
-  _has_bits_[0] |= 0x00000010u;
+  _has_bits_[0] |= 0x00000020u;
 }
 inline void tictacpacket::clear_has_endtype() {
-  _has_bits_[0] &= ~0x00000010u;
+  _has_bits_[0] &= ~0x00000020u;
 }
 inline void tictacpacket::clear_endtype() {
   endtype_ = 1;
@@ -453,15 +544,15 @@ inline void tictacpacket::set_endtype(::tictac::tictacpacket_EndType value) {
   // @@protoc_insertion_point(field_set:tictac.tictacpacket.endType)
 }
 
-// optional int32 nPos = 6;
+// optional int32 nPos = 7;
 inline bool tictacpacket::has_npos() const {
-  return (_has_bits_[0] & 0x00000020u) != 0;
+  return (_has_bits_[0] & 0x00000040u) != 0;
 }
 inline void tictacpacket::set_has_npos() {
-  _has_bits_[0] |= 0x00000020u;
+  _has_bits_[0] |= 0x00000040u;
 }
 inline void tictacpacket::clear_has_npos() {
-  _has_bits_[0] &= ~0x00000020u;
+  _has_bits_[0] &= ~0x00000040u;
 }
 inline void tictacpacket::clear_npos() {
   npos_ = 0;
