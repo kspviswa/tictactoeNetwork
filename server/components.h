@@ -54,7 +54,17 @@ enum EMatchState
 	MATCH_OTHER
 };
 
+enum EPlayerState
+{
+	PLAYING=0,
+	WON=1,
+	LOST=2,
+	TIE=3,
+	TERMINATED=4
+};
+
 typedef enum EMatchState eMatchState;
+typedef enum EPlayerState ePlayerState;
 
 class CMatch
 {
@@ -76,7 +86,9 @@ public:
 	string sPlayer2;
 	string sIP2;
 	eMatchState eState;
-	unsigned long nLastSnapshotTime;
+	ePlayerState eP1State;
+	ePlayerState eP2State;
+	//unsigned long nLastSnapshotTime;
 };
 
 class CController
@@ -87,7 +99,7 @@ public :
 	int initOrAttachNewMatch(CPlayer *pPlayer);
 	long FindPlayerMatch(unsigned long nIPv4);
 	CPlayer* returnPlayer(unsigned long nIndex);
-	unsigned long FindMatchByPlayer(unsigned long nIPv4);
+	//unsigned long FindMatchByPlayer(unsigned long nIPv4);
 	CMatchStatistics* returnStatistics(unsigned long nMatchId);
 	void returnHtmlMatchStatistics();
 	void attachPlayer(CPlayer *pPlayer);
@@ -99,13 +111,13 @@ public :
 
 	void processIncomingMessage(tictacpacket thePacket);
 	long parsePacket(unsigned char *pSrc, unsigned long nLen);
-	int sendResponse(tictacpacket *pSrcPacket);
-	int processRegisterMessage(tictacpacket *pPacket);
+	//int sendResponse(tictacpacket *pSrcPacket);
+	int processRegisterMessage(tictacpacket *pPacket,struct sock_addr *pClientAddr);
 	int processSnapshotMessage(tictacpacket *pPacket);
 	int processTerminateMessage(tictacpacket *pPacket);
 	int processEndMessage(tictacpacket *pPacket);
 
-	int sendPacketToClient(tictacpacket *pPacket);
+	int sendPacketToClient(tictacpacket *pPacket, CPlayer *pPlayer);
 
 public:
 	// index is incrementing number
@@ -128,8 +140,8 @@ public:
 class CConn
 {
 public:
-	void prepareAddress(struct sockaddr_in *pSrc);
-	void sendMessage(void *pMsg, unsigned long nLen);
+	void prepareAddress(struct sock_addr *pSrc);
+	int sendMessage(void *pMsg, unsigned long nLen);
 
 public:
 	unsigned long nSockId;

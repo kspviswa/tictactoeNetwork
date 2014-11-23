@@ -7,8 +7,12 @@
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #include "components.h"
 #include "tictac.h"
+
+
 
 /**
  * processIncomingMessage()
@@ -17,7 +21,7 @@
  * Input : A populate tictacpacket
  * Output : nothing.
  */
-void CController::processIncomingMessage(tictacpacket thePacket)
+void CController::processIncomingMessage(tictacpacket thePacket, struct sockaddr_in clientAddr)
 {
 	/**
 	 * When we have thePacket, it is quit safe to predict that,
@@ -34,7 +38,7 @@ void CController::processIncomingMessage(tictacpacket thePacket)
 	{
 	case tictacpacket::REGISTER :
 		// A new client arrived. Please do the needful
-		processRegisterMessage(&thePacket);
+		processRegisterMessage(&thePacket, &clientAddr);
 		break;
 	case tictacpacket::SNAPSHOTPUT:
 		// A client has sent their snapshot. Proceed.
@@ -53,22 +57,22 @@ void CController::processIncomingMessage(tictacpacket thePacket)
 	}
 }
 
- long CController::FindPlayerMatch(unsigned long nIPv4)
+long CController::FindPlayerMatch(unsigned long nIPv4)
 {
-	 long nRetId = -1;
-	 std::map<unsigned long, CPlayer*>::iterator iter;
+	long nRetId = -1;
+	std::map<unsigned long, CPlayer*>::iterator iter;
 
-	 // lock & do the work
-	 pthread_mutex_lock(&lockPlayers);
-	 iter = _mapPlayers.find(nIPv4);
+	// lock & do the work
+	pthread_mutex_lock(&lockPlayers);
+	iter = _mapPlayers.find(nIPv4);
 
-	 if(iter != _mapPlayers.end())
-	 {
-		 nRetId = iter->first();
-	 }
-	 pthread_mutex_unlock(&lockPlayers);
+	if(iter != _mapPlayers.end())
+	{
+		nRetId = iter->first();
+	}
+	pthread_mutex_unlock(&lockPlayers);
 
-	 return nRetId;
+	return nRetId;
 }
 
 CPlayer* CController::returnPlayer(unsigned long nIndex)
@@ -154,7 +158,7 @@ int CController::initOrAttachNewMatch(CPlayer *pPlayer)
  * be returned to client via arbitary UDP Socket.
  */
 
-int CController::processRegisterMessage(tictacpacket *pPacket)
+int CController::processRegisterMessage(tictacpacket *pPacket, struct sock_addr *pClientAddr)
 {
 	/*
 	 * The algo is to search the _mapPlayers with incoming ipv4
@@ -176,6 +180,8 @@ int CController::processRegisterMessage(tictacpacket *pPacket)
 		pNewPlayer->pMatch = NULL;
 		pNewPlayer->strState = "Initial-State";
 		pNewPlayer->nSnapshotTime = time(0);
+
+		pNewPlayer->connObject.prepareAddress(pClientAddr);
 
 		// Add to our inventory
 		attachPlayer(pNewPlayer);
@@ -214,6 +220,22 @@ int CController::processRegisterMessage(tictacpacket *pPacket)
 				dResponse.set_msgtype(tictacpacket::OK);
 				break;
 			case ATTACH_MATCH:
+				// Create a report for the new match
+				CMatchStatistics *pStat = new CMatchStatistics();
+				pStat->eP1State = PLAYING;
+				pStat->eP2State = PLAYING;
+				pStat->nMatchId = pMatch->nMatchId;
+				pStat->sIP1 = pMatch->m_hPlayer1->sIP;
+				pStat->sIP2 = pMatch->m_hPlayer2->sIP;
+				pStat->sPlayer1 = pMatch->m_hPlayer1->strName;
+				pStat->sPlayer2 = pMatch->m_hPlayer2->strName;
+
+				pthread_mutex_lock(&lockStatistics);
+
+				_mapStatistics.insert(std::make_pair(pStat->nMatchId, pStat));
+
+				pthread_mutex_unlock(&lockStatistics);
+
 				// cook a START RESPONSE and send out
 				dResponse.set_ipv4opp(pMatch->m_hPlayer2->nIPv4);
 				break;
@@ -223,17 +245,165 @@ int CController::processRegisterMessage(tictacpacket *pPacket)
 		}
 
 		// Cook a packet & send out
-		sendPacketToClient(&dResponse);
+		sendPacketToClient(&dResponse, pNewPlayer);
 	}
 	return 0;
 }
+
+/**
+ * processSnapshotMessage()
+ * Proceed with updating the state information that was sent by a client.
+ *
+ * Algo
+ * ****
+ * 1) Get the IPv4
+ * 2) Point to the matching player with IPv4
+ * 3) If found, then update the state information of that particular client
+ * 4) If not, silently discard
+ */
+int CController::processSnapshotMessage(tictacpacket *pPacket)
+{
+	if(pPacket & !pPacket->state().empty())
+	{
+		// Find a match first
+		long nMatch = FindPlayerMatch(pPacket->ipv4());
+		CPlayer *pNewPlayer;
+
+		pNewPlayer = returnPlayer(nMatch);
+
+		if(pNewPlayer)
+		{
+			pNewPlayer->strState = pPacket->state();
+		}
+	}
+	return 0;
+}
+
+int CController::processTerminateMessage(tictacpacket *pPacket)
+{
+	if(pPacket)
+	{
+		// Find a match first
+		long nMatch = FindPlayerMatch(pPacket->ipv4());
+		CPlayer *pNewPlayer;
+
+		pNewPlayer = returnPlayer(nMatch);
+
+		if(pNewPlayer)
+		{
+			CMatch *pMatch = pNewPlayer->pMatch;
+			if(pMatch)
+			{
+				pMatch->m_MatchState = MATCH_SUSPENDED;
+			}
+
+			CMatchStatistics *pStat;
+			map<unsigned long, CMatchStatistics*>::iterator iter;
+
+			pthread_mutex_lock(&lockStatistics);
+			iter = _mapStatistics.find(pMatch->nMatchId);
+			pthread_mutex_unlock(&lockStatistics);
+
+			if(iter != _mapStatistics.end())
+			{
+				pStat = iter->second;
+			}
+
+			if(pNewPlayer->sName == pStat->sPlayer1)
+			{
+				pStat->eP1State = TERMINATED;
+				pStat->eP2State = WON;
+			}
+			else
+			{
+				pStat->eP2State = TERMINATED;
+				pStat->eP1State = WON;
+			}
+		}
+	}
+	return 0;
+}
+
+int CController::processEndMessage(tictacpacket *pPacket)
+{
+	if(pPacket)
+	{
+		// Find a match first
+		long nMatch = FindPlayerMatch(pPacket->ipv4());
+		CPlayer *pNewPlayer;
+		bool bPlayer1 = false;
+
+		pNewPlayer = returnPlayer(nMatch);
+
+		if(pNewPlayer)
+		{
+			CMatch *pMatch = pNewPlayer->pMatch;
+			if(pMatch)
+			{
+				pMatch->m_MatchState = MATCH_ENDED;
+			}
+
+			CMatchStatistics *pStat;
+			map<unsigned long, CMatchStatistics*>::iterator iter;
+
+			pthread_mutex_lock(&lockStatistics);
+			iter = _mapStatistics.find(pMatch->nMatchId);
+			pthread_mutex_unlock(&lockStatistics);
+
+			if(iter != _mapStatistics.end())
+			{
+				pStat = iter->second;
+			}
+
+			if(pNewPlayer->sName == pStat->sPlayer1)
+			{
+				bPlayer1 = true;
+			}
+			switch(pPacket->endtype())
+			{
+			case tictacpacket::WON:
+				if(bPlayer1)
+				{
+					pStat->eP1State = WON;
+					pStat->eP2State = LOST;
+				}
+				else
+				{
+					pStat->eP2State = WON;
+					pStat->eP1State = LOST;
+				}
+				break;
+			case tictacpacket::LOST:
+				if(bPlayer1)
+				{
+					pStat->eP1State = LOST;
+					pStat->eP2State = WON;
+				}
+				else
+				{
+					pStat->eP2State = LOST;
+					pStat->eP1State = WON;
+				}
+				break;
+			case tictacpacket::DRAW:
+				pStat->eP1State = TIE;
+				pStat->eP2State = TIE;
+				break;
+			default:
+				break;
+			}
+		}
+	}
+	return 0;
+}
+
 /**
  * parsePacket()
  * This function will be called after reading the incoming raw bytes on the socket
  * Input : pointer to source buffer, that was filled from socket
  * Output : parsing result.
  */
-long CController::parsePacket(unsigned char *pSrc, unsigned long nLen)
+long CController::parsePacket(unsigned char *pSrc, unsigned long nLen, )
 {
 	tictacpacket thePacket;
 	if(thePacket.ParseFromArray(pSrc, nLen))
@@ -246,6 +416,18 @@ long CController::parsePacket(unsigned char *pSrc, unsigned long nLen)
 		return -1; // Failure
 }
 
+int CController::sendPacketToClient(tictacpacket *pSrcPacket, CPlayer *pPlayer)
+{
+	if(pPlayer && pSrcPacket)
+	{
+		if(pPlayer->connObject.nSockId > 0)
+		{
+			string data = pSrcPacket->SerializeAsString();
+			pPlayer->connObject.sendMessage((void*)const_cast<char*>(data.c_str()), data.length());
+		}
+	}
+	return 0;
+}
 
 int CController::init()
 {
@@ -259,3 +441,20 @@ int CController::init()
 }
 
 
+void CConn::prepareAddress(struct sock_addr *pSrc)
+{
+	if(pSrc)
+	{
+		memcpy(&clientAddr, pSrc, sizeof(struct sock_addr));
+		nPortId = htons(SMARTPEER_CLIENT_PORT);
+		clientAddr.sin_port = nPortId;
+		this->nSockId = socket(AF_INET, SOCK_DGRAM, 0);
+	}
+}
+
+int CConn::sendMessage(void *pMsg, unsigned long nLen)
+{
+	int nRet;
+	nRet = sendto(nSockId,pMsg,nLen,0,(struct sockaddr *)&clientAddr,sizeof(clientAddr));
+	return nRet;
+}
