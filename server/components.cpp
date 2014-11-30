@@ -9,10 +9,212 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include "time.h"
 #include "components.h"
 #include "tictac.h"
 
+void CController::doReporting()
+{
 
+	int listenfd = 0, connfd = 0;
+	struct sockaddr_in serv_addr;
+
+	char sendBuff[1025];
+	time_t ticks;
+
+	listenfd = socket(AF_INET, SOCK_STREAM, 0);
+	memset(&serv_addr, '0', sizeof(serv_addr));
+	memset(sendBuff, '0', sizeof(sendBuff));
+
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	serv_addr.sin_port = htons(SMARTPEER_HTTP_PORT);
+
+	bind(listenfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
+
+	listen(listenfd, 10);
+
+	cout << "Starting HTTP reporting service" << endl;
+	while(1)
+	{
+		connfd = accept(listenfd, (struct sockaddr*)NULL, NULL);
+		string sHtml = returnHtmlMatchStatistics();
+
+		send(connfd, "HTTP/1.0 200 OK\n\n", 17, 0);
+		write(connfd, sHtml.c_str(), sHtml.length());
+
+		close(connfd);
+		sleep(1);
+	}
+}
+
+string CController::returnHtmlMatchStatistics()
+{
+	time_t tnow = time(0);
+	string cstrTime = ctime(&tnow);
+
+	string sHtml = "<html><head><title>TicTacToe N/w Statistics</title></head>";
+	sHtml += string("<body> <H1> TIC-TAC-TOE MATCH CONTROLLER WEB INTERFACE </H1> <BR> <P>");
+	sHtml += string("<h3> Live Match Report @ ") + string(cstrTime) + string(" </h3> <br><br>");
+
+	//Get the list of statistics
+	map<unsigned long, CMatchStatistics*> stat;
+	map<unsigned long, CMatchStatistics*>::iterator iter;
+
+	pthread_mutex_lock(&lockStatistics);
+	stat = _mapStatistics;
+	pthread_mutex_unlock(&lockStatistics);
+
+	if(stat.size() > 0)
+	{
+
+	}
+	else
+	{
+		sHtml += string("<marquee><h3> No match has started. Watch out this space soon.....</h3></marquee>");
+	}
+
+//	//lockStatistics
+//
+//	sHtml += string("<table> <tr><th>Match ID</th><th> Player 1 </th> <th> Player 1 [IP] </th> <th> Player 2 </th> <th> Player 2 [IP] </th> <</tr>");
+
+	sHtml += string("</body></html>");
+	return sHtml;
+}
+
+void* processMessageHelper(void *pArg)
+{
+	if(pArg)
+	{
+		CWrk *wrk = (CWrk*)pArg;
+		CController *pCtrl = (CController*)wrk->pObject;
+		int nLen = wrk->nLen;
+		pCtrl->parsePacket((unsigned char*)wrk->pData, nLen);
+		if(wrk)
+		{
+			free(wrk->pData);
+			free(wrk);
+		}
+	}
+	pthread_exit(NULL);
+}
+
+void CController::doSocketListen()
+{
+	bool bInitStatus = false, bTerminate = false;
+	int result;
+	int status;
+	fd_set         readfds;
+	struct timeval selTimeout;
+	struct sockaddr_in serverSock, clientSock;
+	socklen_t sLen = sizeof(clientSock);
+	unsigned char szData[2048];
+	long nDataLen;
+
+	int nServerSocket;
+
+	cout << "Starting UDP Server service" << endl;
+
+	if ((nServerSocket=socket(AF_INET, SOCK_DGRAM, 0))==-1)
+	{
+		cout << "Unable to start server. Socket call failed. :-(" << endl;
+		return;
+	}
+
+	memset(&serverSock, 0, sLen);
+	memset(&clientSock, 0, sLen);
+
+	/* loop until we're asked to terminate */
+	while(!bTerminate)
+	{
+
+		FD_ZERO(&readfds);
+		/* set our usual timeout */
+		selTimeout.tv_sec  = SELECT_TIMEOUT_SEC;
+		selTimeout.tv_usec = SELECT_TIMEOUT_USEC;
+
+		FD_SET(nServerSocket, &readfds);
+
+		if( !bInitStatus )
+		{
+
+			serverSock.sin_family = AF_INET;
+			serverSock.sin_port = htons(SMARTPEER_SERVER_PORT);
+			serverSock.sin_addr.s_addr = htonl(INADDR_ANY);
+			if (bind(nServerSocket, (sockaddr*)&serverSock, sizeof(serverSock))==-1)
+			{
+				cout << "Server cannot bind to specified port" << endl;
+				return;
+			}
+
+			bInitStatus = true;
+			cout << "Started server @ " << SMARTPEER_SERVER_PORT << endl;
+		}
+		/*
+		 * Wait for something to happen on at least one of the sockets
+		 */
+		status = select(FD_SETSIZE, &readfds, NULL, NULL, 0/*&selTimeout*/) ;
+
+		/*
+		 * Catch timeout or error
+		 */
+		if ( 0 == status )
+		{
+
+			continue;
+
+		}
+
+		/* interrupted system call */
+		else if (0 > status && EINTR == errno)
+		{
+
+			continue;
+		}
+		/* temporary resource shortage */
+		else if (0 > status && EAGAIN == errno)
+		{
+
+			continue;
+		}
+		else if (0 > status)
+		{
+			cout << "Select returned abort. No luck " << endl;
+			return;
+		}
+
+		/*
+		 * See if an event occurred on this one
+		 */
+		cout << "Incoming Message" << endl;
+
+		int nRet;
+		unsigned char *pData = (unsigned char*) malloc(2048);
+		CWrk *pWork = new CWrk();
+
+		if(!pData || !pWork)
+		{
+			cout << "Memory allocation failure for work items" << endl;
+			return;
+		}
+
+		pWork->nLen = recvfrom(nServerSocket, pData, 2048, 0, (sockaddr*)&clientSock, &sLen);
+
+		if(pWork->nLen < 0)
+		{
+			cout << "recvFrom failed" << endl;
+			free(pData);
+			free(pWork);
+		}
+
+		pWork->pObject = this;
+		pWork->pData = pData;
+
+		pthread_t newThread;
+		pthread_create(&newThread, NULL, processMessageHelper, pWork);
+	}
+
+}
 
 /**
  * processIncomingMessage()
@@ -21,7 +223,7 @@
  * Input : A populate tictacpacket
  * Output : nothing.
  */
-void CController::processIncomingMessage(tictacpacket thePacket, struct sockaddr_in clientAddr)
+void CController::processIncomingMessage(tictacpacket thePacket)
 {
 	/**
 	 * When we have thePacket, it is quit safe to predict that,
@@ -38,7 +240,7 @@ void CController::processIncomingMessage(tictacpacket thePacket, struct sockaddr
 	{
 	case tictacpacket::REGISTER :
 		// A new client arrived. Please do the needful
-		processRegisterMessage(&thePacket, &clientAddr);
+		processRegisterMessage(&thePacket);
 		break;
 	case tictacpacket::SNAPSHOTPUT:
 		// A client has sent their snapshot. Proceed.
@@ -68,7 +270,7 @@ long CController::FindPlayerMatch(unsigned long nIPv4)
 
 	if(iter != _mapPlayers.end())
 	{
-		nRetId = iter->first();
+		nRetId = iter->first;
 	}
 	pthread_mutex_unlock(&lockPlayers);
 
@@ -86,7 +288,7 @@ CPlayer* CController::returnPlayer(unsigned long nIndex)
 
 	if(iter != _mapPlayers.end())
 	{
-		pRet = iter->second();
+		pRet = iter->second;
 	}
 	else
 	{
@@ -107,6 +309,13 @@ string IpAddrToString(unsigned long nIpv4)
 	sIP.assign(szIP, strlen(szIP));
 
 	return sIP;
+}
+
+unsigned long StringToIpInt(string SIP)
+{
+	unsigned long nIP;
+	inet_pton(AF_INET, SIP.c_str(), &nIP);
+	return nIP;
 }
 
 void CController::attachPlayer(CPlayer *pPlayer)
@@ -158,7 +367,7 @@ int CController::initOrAttachNewMatch(CPlayer *pPlayer)
  * be returned to client via arbitary UDP Socket.
  */
 
-int CController::processRegisterMessage(tictacpacket *pPacket, struct sock_addr *pClientAddr)
+int CController::processRegisterMessage(tictacpacket *pPacket)
 {
 	/*
 	 * The algo is to search the _mapPlayers with incoming ipv4
@@ -181,7 +390,12 @@ int CController::processRegisterMessage(tictacpacket *pPacket, struct sock_addr 
 		pNewPlayer->strState = "Initial-State";
 		pNewPlayer->nSnapshotTime = time(0);
 
-		pNewPlayer->connObject.prepareAddress(pClientAddr);
+		struct sockaddr_in clientAddr;
+		clientAddr.sin_family = AF_INET;
+		clientAddr.sin_port = htons(SMARTPEER_CLIENT_PORT);
+		clientAddr.sin_addr.s_addr = pNewPlayer->nIPv4;
+
+		pNewPlayer->connObject.prepareAddress(&clientAddr);
 
 		// Add to our inventory
 		attachPlayer(pNewPlayer);
@@ -216,10 +430,13 @@ int CController::processRegisterMessage(tictacpacket *pPacket, struct sock_addr 
 			{
 
 			case INIT_MATCH:
+			{
 				// cook a OK RESPONSE and send out
 				dResponse.set_msgtype(tictacpacket::OK);
 				break;
+			}
 			case ATTACH_MATCH:
+			{
 				// Create a report for the new match
 				CMatchStatistics *pStat = new CMatchStatistics();
 				pStat->eP1State = PLAYING;
@@ -227,8 +444,8 @@ int CController::processRegisterMessage(tictacpacket *pPacket, struct sock_addr 
 				pStat->nMatchId = pMatch->nMatchId;
 				pStat->sIP1 = pMatch->m_hPlayer1->sIP;
 				pStat->sIP2 = pMatch->m_hPlayer2->sIP;
-				pStat->sPlayer1 = pMatch->m_hPlayer1->strName;
-				pStat->sPlayer2 = pMatch->m_hPlayer2->strName;
+				pStat->sPlayer1 = pMatch->m_hPlayer1->sName;
+				pStat->sPlayer2 = pMatch->m_hPlayer2->sName;
 
 				pthread_mutex_lock(&lockStatistics);
 
@@ -239,6 +456,7 @@ int CController::processRegisterMessage(tictacpacket *pPacket, struct sock_addr 
 				// cook a START RESPONSE and send out
 				dResponse.set_ipv4opp(pMatch->m_hPlayer2->nIPv4);
 				break;
+			}
 			default:
 				break;
 			}
@@ -263,7 +481,7 @@ int CController::processRegisterMessage(tictacpacket *pPacket, struct sock_addr 
  */
 int CController::processSnapshotMessage(tictacpacket *pPacket)
 {
-	if(pPacket & !pPacket->state().empty())
+	if(pPacket && !pPacket->state().empty())
 	{
 		// Find a match first
 		long nMatch = FindPlayerMatch(pPacket->ipv4());
@@ -403,7 +621,7 @@ int CController::processEndMessage(tictacpacket *pPacket)
  * Input : pointer to source buffer, that was filled from socket
  * Output : parsing result.
  */
-long CController::parsePacket(unsigned char *pSrc, unsigned long nLen, )
+long CController::parsePacket(unsigned char *pSrc, unsigned long nLen)
 {
 	tictacpacket thePacket;
 	if(thePacket.ParseFromArray(pSrc, nLen))
@@ -441,13 +659,11 @@ int CController::init()
 }
 
 
-void CConn::prepareAddress(struct sock_addr *pSrc)
+void CConn::prepareAddress(struct sockaddr_in *pSrc)
 {
 	if(pSrc)
 	{
-		memcpy(&clientAddr, pSrc, sizeof(struct sock_addr));
-		nPortId = htons(SMARTPEER_CLIENT_PORT);
-		clientAddr.sin_port = nPortId;
+		memcpy(&clientAddr, pSrc, sizeof(struct sockaddr_in));
 		this->nSockId = socket(AF_INET, SOCK_DGRAM, 0);
 	}
 }

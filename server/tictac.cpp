@@ -2,7 +2,7 @@
 // source: tictac.proto
 
 #define INTERNAL_SUPPRESS_PROTOBUF_FIELD_DEPRECATION
-#include "tictac.pb.h"
+#include "tictac.h"
 
 #include <algorithm>
 
