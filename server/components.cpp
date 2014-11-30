@@ -422,6 +422,7 @@ int CController::processRegisterMessage(tictacpacket *pPacket)
 			dResponse.set_ipv4opp(pMatch->m_hPlayer2->nIPv4);
 			dResponse.set_msgtype(tictacpacket::RESUME);
 			dResponse.set_state(pNewPlayer->strState);
+			dResponse.set_playername(pMatch->m_hPlayer2->sName);
 		}
 		else
 		{
@@ -454,7 +455,9 @@ int CController::processRegisterMessage(tictacpacket *pPacket)
 				pthread_mutex_unlock(&lockStatistics);
 
 				// cook a START RESPONSE and send out
+				dResponse.set_msgtype(tictacpacket::START);
 				dResponse.set_ipv4opp(pMatch->m_hPlayer2->nIPv4);
+				dResponse.set_playername(pMatch->m_hPlayer2->sName);
 				break;
 			}
 			default:
