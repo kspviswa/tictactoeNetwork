@@ -31,6 +31,7 @@ void displayErrorAndQuit(int nError)
 		cout << "Minimum value for the timer should be 1 sec" << endl;
 		break;
 	default:
+		break;
 	}
 
 	cout << "Usage" << endl;
@@ -84,7 +85,7 @@ int main(int argc, char *argv[])
 	 */
 
 	// Sanity check
-	if(argc < 1 || argc > 2)
+	if(argc != 2)
 	{
 		displayErrorAndQuit(-1);
 	}

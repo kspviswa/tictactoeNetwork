@@ -33,6 +33,7 @@ void CController::doReporting()
 
 	listen(listenfd, 10);
 
+	cout << "Starting HTTP reporting service" << endl;
 	while(1)
 	{
 		connfd = accept(listenfd, (struct sockaddr*)NULL, NULL);
@@ -50,14 +51,15 @@ string CController::returnHtmlMatchStatistics()
 	string sHtml = "<html><head><title>TicTacToe N/w Statistics</title></head>";
 	sHtml += string("<body> <H1> TIC-TAC-TOE MATCH CONTROLLER WEB INTERFACE </H1> <BR> <P>");
 	sHtml += string("<h3> Live Match Report </h3> <br><br>");
+//
+//	//Get the list of statistics
+//
+//	//lockStatistics
+//
+//	sHtml += string("<table> <tr><th>Match ID</th><th> Player 1 </th> <th> Player 1 [IP] </th> <th> Player 2 </th> <th> Player 2 [IP] </th> <</tr>");
 
-	//Get the list of statistics
-
-	lockStatistics
-
-	sHtml += string("<table> <tr><th>Match ID</th><th> Player 1 </th> <th> Player 1 [IP] </th> <th> Player 2 </th> <th> Player 2 [IP] </th> <</tr>");
-
-
+	sHtml += string("</body></html>");
+	return sHtml;
 }
 
 void* processMessageHelper(void *pArg)
@@ -85,11 +87,13 @@ void CController::doSocketListen()
 	fd_set         readfds;
 	struct timeval selTimeout;
 	struct sockaddr_in serverSock, clientSock;
-	size_t sLen = sizeof(clientSock);
+	socklen_t sLen = sizeof(clientSock);
 	unsigned char szData[2048];
 	long nDataLen;
 
 	int nServerSocket;
+
+	cout << "Starting UDP Server service" << endl;
 
 	if ((nServerSocket=socket(AF_INET, SOCK_DGRAM, 0))==-1)
 	{
@@ -117,13 +121,14 @@ void CController::doSocketListen()
 			serverSock.sin_family = AF_INET;
 			serverSock.sin_port = htons(SMARTPEER_SERVER_PORT);
 			serverSock.sin_addr.s_addr = htonl(INADDR_ANY);
-			if (bind(nServerSocket, &serverSock, sizeof(serverSock))==-1)
+			if (bind(nServerSocket, (sockaddr*)&serverSock, sizeof(serverSock))==-1)
 			{
 				cout << "Server cannot bind to specified port" << endl;
 				return;
 			}
 
 			bInitStatus = true;
+			cout << "Started server @ " << SMARTPEER_SERVER_PORT << endl;
 		}
 		/*
 		 * Wait for something to happen on at least one of the sockets
@@ -173,9 +178,9 @@ void CController::doSocketListen()
 			return;
 		}
 
-		pWork->nLen = recvfrom(nServerSocket, pData, 2048, 0, &clientSock, &sLen);
+		pWork->nLen = recvfrom(nServerSocket, pData, 2048, 0, (sockaddr*)&clientSock, &sLen);
 
-		if(nLen < 0)
+		if(pWork->nLen < 0)
 		{
 			cout << "recvFrom failed" << endl;
 			free(pData);
@@ -215,7 +220,7 @@ void CController::processIncomingMessage(tictacpacket thePacket)
 	{
 	case tictacpacket::REGISTER :
 		// A new client arrived. Please do the needful
-		processRegisterMessage(&thePacket, &clientAddr);
+		processRegisterMessage(&thePacket);
 		break;
 	case tictacpacket::SNAPSHOTPUT:
 		// A client has sent their snapshot. Proceed.
@@ -245,7 +250,7 @@ long CController::FindPlayerMatch(unsigned long nIPv4)
 
 	if(iter != _mapPlayers.end())
 	{
-		nRetId = iter->first();
+		nRetId = iter->first;
 	}
 	pthread_mutex_unlock(&lockPlayers);
 
@@ -263,7 +268,7 @@ CPlayer* CController::returnPlayer(unsigned long nIndex)
 
 	if(iter != _mapPlayers.end())
 	{
-		pRet = iter->second();
+		pRet = iter->second;
 	}
 	else
 	{
@@ -289,7 +294,7 @@ string IpAddrToString(unsigned long nIpv4)
 unsigned long StringToIpInt(string SIP)
 {
 	unsigned long nIP;
-	inet_pton(AF_INET, SIP.c_str(), &nIP)
+	inet_pton(AF_INET, SIP.c_str(), &nIP);
 	return nIP;
 }
 
@@ -405,10 +410,13 @@ int CController::processRegisterMessage(tictacpacket *pPacket)
 			{
 
 			case INIT_MATCH:
+			{
 				// cook a OK RESPONSE and send out
 				dResponse.set_msgtype(tictacpacket::OK);
 				break;
+			}
 			case ATTACH_MATCH:
+			{
 				// Create a report for the new match
 				CMatchStatistics *pStat = new CMatchStatistics();
 				pStat->eP1State = PLAYING;
@@ -416,8 +424,8 @@ int CController::processRegisterMessage(tictacpacket *pPacket)
 				pStat->nMatchId = pMatch->nMatchId;
 				pStat->sIP1 = pMatch->m_hPlayer1->sIP;
 				pStat->sIP2 = pMatch->m_hPlayer2->sIP;
-				pStat->sPlayer1 = pMatch->m_hPlayer1->strName;
-				pStat->sPlayer2 = pMatch->m_hPlayer2->strName;
+				pStat->sPlayer1 = pMatch->m_hPlayer1->sName;
+				pStat->sPlayer2 = pMatch->m_hPlayer2->sName;
 
 				pthread_mutex_lock(&lockStatistics);
 
@@ -428,6 +436,7 @@ int CController::processRegisterMessage(tictacpacket *pPacket)
 				// cook a START RESPONSE and send out
 				dResponse.set_ipv4opp(pMatch->m_hPlayer2->nIPv4);
 				break;
+			}
 			default:
 				break;
 			}
@@ -452,7 +461,7 @@ int CController::processRegisterMessage(tictacpacket *pPacket)
  */
 int CController::processSnapshotMessage(tictacpacket *pPacket)
 {
-	if(pPacket & !pPacket->state().empty())
+	if(pPacket && !pPacket->state().empty())
 	{
 		// Find a match first
 		long nMatch = FindPlayerMatch(pPacket->ipv4());

@@ -12,6 +12,12 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <errno.h>
 
 #include "tictac.h"
 
@@ -35,7 +41,18 @@ unsigned long StringToIpInt(string SIP);
 #define ATTACH_MATCH 2
 
 class CMatch;
-class CConn;
+
+class CConn
+{
+public:
+	void prepareAddress(struct sockaddr_in *pSrc);
+	int sendMessage(void *pMsg, unsigned long nLen);
+
+public:
+	unsigned long nSockId;
+	struct sockaddr_in clientAddr;
+	unsigned long nPortId;
+};
 
 class CWrk
 {
@@ -156,15 +173,4 @@ public:
 	unsigned long nSIP;
 };
 
-class CConn
-{
-public:
-	void prepareAddress(struct sockaddr_in *pSrc);
-	int sendMessage(void *pMsg, unsigned long nLen);
-
-public:
-	unsigned long nSockId;
-	struct sockaddr_in clientAddr;
-	unsigned long nPortId;
-};
 #endif /* COMPONENTS_H_ */
