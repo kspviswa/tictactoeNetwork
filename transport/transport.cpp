@@ -1,9 +1,14 @@
 #include <iostream>
 #include <pthread.h>
 
+#include "../client/packetProcess.h"
 #include "transport.h"
+#include "tictac.h"
 
+/*
 using namespace std;
+using namespace tictac;
+*/
 
 Socket::Socket()
 {
@@ -127,7 +132,9 @@ void *UDPDatagram::recvData (void)
 		    (struct sockaddr *)&serverSocket->m_serverStorage, 
 		    &serverSocket->m_addr_size);
             cout << serverSocket->m_buffer << endl;
-          
+
+            /* Send the packet to Proto Buff for Decoding the incoming Message */
+            processDataComingFromSocket(serverSocket->m_buffer, strlen(serverSocket->m_buffer));          
 	}
 	else if(FD_ISSET(clientSocket->m_sockFD, &rfds))
 	{
@@ -139,6 +146,9 @@ void *UDPDatagram::recvData (void)
 		    (struct sockaddr *)&clientSocket->m_serverStorage, 
 		    &clientSocket->m_addr_size);
             cout << clientSocket->m_buffer << endl;
+
+            /* Send the packet to Proto Buff for Decoding the incoming Message */
+            processDataComingFromSocket(clientSocket->m_buffer, strlen(clientSocket->m_buffer));          
 	}
 
         cout << " Waiting On Select Call " << endl;
@@ -148,11 +158,13 @@ void *UDPDatagram::recvData (void)
     return 0;
 }
 
-void UDPDatagram::processDataComingFromSocket (const char *pProtoBuf)
+void UDPDatagram::processDataComingFromSocket (char *pProtoBuf,  int nLen)
 {
     /* Invoke Google Proto Buffer API to convert 
      * Serial Raw Data into Respective Message Processing
      */
+    CPlayer player;
+    player.parsePacket((unsigned char *)pProtoBuf, nLen);
 }
 
 /* This function needs to be invoked during Registration of a client */

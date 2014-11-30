@@ -1,4 +1,3 @@
-
 /*
  * components.cpp
  *
@@ -8,17 +7,21 @@
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include "components.h"
+#include "iostream"
+#include "packetProcess.h"
 #include "tictac.h"
 
-
-Class CPlayer
+/* CPlayer Constructor */
+CPlayer::CPlayer()
 {
-    public:
-	parsePacket(unsigned char *pSrc, unsigned long nLen);
 
-};
+}
 
+/* CPlayer Destructor  */
+CPlayer::~CPlayer()
+{
+
+}
 
 /**
  * processIncomingMessage()
@@ -33,6 +36,8 @@ void CPlayer::processIncomingMessage(tictacpacket thePacket)
      * When we have thePacket, it is quit safe to predict that,
      * the thePacket is complete. else parse would have been failed.
      */
+
+    cout << "I am inside Function " << __func__ << endl;
 
     if(!thePacket.IsInitialized())
     {
@@ -51,34 +56,40 @@ void CPlayer::processIncomingMessage(tictacpacket thePacket)
 	case tictacpacket::RESUME:
 	    processResumeMessage(&thePacket);
 	    break;
-	case tictacpacket:MOVE:
+	case tictacpacket::MOVE:
             processEndMessage(&thePacket);
 	    break;
 	default:
-	  cout << "Not processed" << endl;
+	  cout << "ERROR: Invalid Packet Received" << endl;
+	    break;
     }
 }
 
 int CPlayer::processOkMessage(tictacpacket *pPacket)
 {
+    cout << "I am inside Function " << __func__ << endl;
     return 0;
 }
 int CPlayer::processStartMessage(tictacpacket *pPacket)
 {
+    cout << "I am inside Function " << __func__ << endl;
     return 0;
 }
 int CPlayer::processResumeMessage(tictacpacket *pPacket)
 {
+    cout << "I am inside Function " << __func__ << endl;
     return 0;
 }
 int CPlayer::processMoveMessage(tictacpacket *pPacket)
 {
+    cout << "I am inside Function " << __func__ << endl;
     return 0;
 }
 
 void CPlayer::processOutgoingMessage(unsigned char *pBuffer)
 {
-    tictacpacket thePacket
+    tictacpacket thePacket;
+    cout << "I am inside Function " << __func__ << endl;
 }
 /**
  * parsePacket()
@@ -89,6 +100,8 @@ void CPlayer::processOutgoingMessage(unsigned char *pBuffer)
 long CPlayer::parsePacket(unsigned char *pSrc, unsigned long nLen)
 {
     tictacpacket thePacket;
+    cout << "I am inside Function " << __func__ << endl;
+
     if(thePacket.ParseFromArray(pSrc, nLen))
     {
 	// If parse is successful, then proceed to process the packet
@@ -96,5 +109,8 @@ long CPlayer::parsePacket(unsigned char *pSrc, unsigned long nLen)
 	return 0; // success
     }
     else
+    {
+        cout << "ERROR: thePacket.ParseFromArray Failed in Function " << __func__ << "Line = " << __LINE__ << endl;
 	return -1; // Failure
+    }
 }

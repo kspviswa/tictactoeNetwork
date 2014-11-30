@@ -68,15 +68,9 @@ class UDPDatagram : public IDataCommunication
 	void *recvData(void);
         void sendDataToServer(const char *pDataBuffer);
         void sendDataToClient(const char *pDataBuffer);
-        void processDataComingFromSocket (const char *pProtoBuf);
-	Socket * getServerSocket()
-	{
-	    return serverSocket;
-	}
-	Socket * getClientSocket()
-	{
-	    return clientSocket;
-	}
+        void processDataComingFromSocket (char *pProtoBuf, int nLen);
+	Socket * getServerSocket() {  return serverSocket; }
+	Socket * getClientSocket() {  return clientSocket; }
 	static void *helper_function (void *ptr)
 	{
 	    return ((UDPDatagram *)ptr)->recvData();
