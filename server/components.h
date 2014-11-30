@@ -35,6 +35,7 @@ typedef vector<unsigned long> vectLong;
 
 string IpAddrToString(unsigned long nIpv4);
 unsigned long StringToIpInt(string SIP);
+string IntToString(unsigned long n);
 
 
 #define INIT_MATCH 1
@@ -112,6 +113,8 @@ class CMatchStatistics
 {
 public:
 	void saveStatistics(CPlayer *p1, CPlayer *p2);
+	string returnStrStateMatch(eMatchState nstate);
+	string returnStrStatePlayer(ePlayerState nState);
 public:
 	unsigned long nMatchId;
 	string sPlayer1;

@@ -12,6 +12,14 @@
 #include "time.h"
 #include "components.h"
 #include "tictac.h"
+#include <sstream>
+
+string IntToString(unsigned long n)
+{
+	stringstream ss;
+	ss << n;
+	return ss.str();
+}
 
 void CController::doReporting()
 {
@@ -67,6 +75,52 @@ string CController::returnHtmlMatchStatistics()
 
 	if(stat.size() > 0)
 	{
+		// Get the player statistics first
+		string sPlayerstat = "<h3><u>Registered players</u></h3><br><p>";
+		sPlayerstat += string("<table border='5'><tr><th>Name</th><th>IP Address</th></tr>");
+
+
+		for(iter = stat.begin(); iter != stat.end(); ++iter)
+		{
+			sPlayerstat += string("<tr><td>");
+			sPlayerstat += iter->second->sPlayer1;
+			sPlayerstat += string("</td><td>");
+			sPlayerstat += iter->second->sIP1;
+			sPlayerstat += string("</td></tr>");
+			sPlayerstat += string("<tr><td>");
+			sPlayerstat += iter->second->sPlayer2;
+			sPlayerstat += string("</td><td>");
+			sPlayerstat += iter->second->sIP2;
+			sPlayerstat += string("</td></tr>");
+		}
+
+		sPlayerstat += string("/table");
+
+		// Get the match statistics
+		string sMatchstat = "<h3><u>Live match updates</u></h3><br><p>";
+		sMatchstat += string("<table border='5'><tr><th>Match ID</th><th>Player 1</th><th>Player 2</th><th>Match state</th><th>P1-State</th><th>P2-State</th></tr>");
+
+		for(iter = stat.begin(); iter != stat.end(); ++iter)
+		{
+			sMatchstat += string("<tr><td>");
+
+			sMatchstat += IntToString(iter->second->nMatchId);
+			sMatchstat += string("</td><td>");
+			sMatchstat += iter->second->sPlayer1;
+			sMatchstat += string("</td></tr>");
+			sMatchstat += string("<tr><td>");
+			sMatchstat += iter->second->sPlayer2;
+			sMatchstat += string("</td><td>");
+			sMatchstat += iter->second->returnStrStateMatch(iter->second->eState);
+			sMatchstat += string("</td><td>");
+			sMatchstat += iter->second->returnStrStatePlayer(iter->second->eP1State);
+			sMatchstat += string("</td><td>");
+			sMatchstat += iter->second->returnStrStatePlayer(iter->second->eP2State);
+
+			sMatchstat += string("</td></tr>");
+		}
+
+		sMatchstat += string("/table");
 
 	}
 	else
@@ -422,6 +476,7 @@ int CController::processRegisterMessage(tictacpacket *pPacket)
 			dResponse.set_ipv4opp(pMatch->m_hPlayer2->nIPv4);
 			dResponse.set_msgtype(tictacpacket::RESUME);
 			dResponse.set_state(pNewPlayer->strState);
+			dResponse.set_playername(pMatch->m_hPlayer2->sName);
 		}
 		else
 		{
@@ -454,7 +509,9 @@ int CController::processRegisterMessage(tictacpacket *pPacket)
 				pthread_mutex_unlock(&lockStatistics);
 
 				// cook a START RESPONSE and send out
+				dResponse.set_msgtype(tictacpacket::START);
 				dResponse.set_ipv4opp(pMatch->m_hPlayer2->nIPv4);
+				dResponse.set_playername(pMatch->m_hPlayer2->sName);
 				break;
 			}
 			default:
@@ -466,6 +523,59 @@ int CController::processRegisterMessage(tictacpacket *pPacket)
 		sendPacketToClient(&dResponse, pNewPlayer);
 	}
 	return 0;
+}
+
+string CMatchStatistics::returnStrStateMatch(eMatchState nstate)
+{
+	string state = "Improper-State";
+	switch(nstate)
+	{
+	case MATCH_READY :
+		state = "Ready";
+		break;
+	case MATCH_STARTED:
+		state = "Started";
+		break;
+	case MATCH_ENDED :
+		state = "Ended";
+		break;
+	case MATCH_TIE:
+		state = "Tied";
+		break;
+	case MATCH_SUSPENDED:
+		state = "Suspended";
+		break;
+	case MATCH_CANCELLED :
+		state = "Cancelled";
+	default:
+		break;
+	}
+	return state;
+}
+string CMatchStatistics::returnStrStatePlayer(ePlayerState nState)
+{
+	string state = "Improper-State";
+	switch(nState)
+	{
+	case PLAYING :
+		state = "Playing";
+		break;
+	case WON :
+		state = "Won";
+		break;
+	case LOST :
+		state = "Lost";
+		break;
+	case TIE :
+		state = "Tied";
+		break;
+	case TERMINATED :
+		state = "Terminated";
+		break;
+	default:
+		break;
+	}
+
 }
 
 /**
