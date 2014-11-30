@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include "time.h"
 #include "components.h"
 #include "tictac.h"
 
@@ -39,6 +40,7 @@ void CController::doReporting()
 		connfd = accept(listenfd, (struct sockaddr*)NULL, NULL);
 		string sHtml = returnHtmlMatchStatistics();
 
+		send(connfd, "HTTP/1.0 200 OK\n\n", 17, 0);
 		write(connfd, sHtml.c_str(), sHtml.length());
 
 		close(connfd);
@@ -48,12 +50,30 @@ void CController::doReporting()
 
 string CController::returnHtmlMatchStatistics()
 {
+	time_t tnow = time(0);
+	string cstrTime = ctime(&tnow);
+
 	string sHtml = "<html><head><title>TicTacToe N/w Statistics</title></head>";
 	sHtml += string("<body> <H1> TIC-TAC-TOE MATCH CONTROLLER WEB INTERFACE </H1> <BR> <P>");
-	sHtml += string("<h3> Live Match Report </h3> <br><br>");
-//
-//	//Get the list of statistics
-//
+	sHtml += string("<h3> Live Match Report @ ") + string(cstrTime) + string(" </h3> <br><br>");
+
+	//Get the list of statistics
+	map<unsigned long, CMatchStatistics*> stat;
+	map<unsigned long, CMatchStatistics*>::iterator iter;
+
+	pthread_mutex_lock(&lockStatistics);
+	stat = _mapStatistics;
+	pthread_mutex_unlock(&lockStatistics);
+
+	if(stat.size() > 0)
+	{
+
+	}
+	else
+	{
+		sHtml += string("<marquee><h3> No match has started. Watch out this space soon.....</h3></marquee>");
+	}
+
 //	//lockStatistics
 //
 //	sHtml += string("<table> <tr><th>Match ID</th><th> Player 1 </th> <th> Player 1 [IP] </th> <th> Player 2 </th> <th> Player 2 [IP] </th> <</tr>");
