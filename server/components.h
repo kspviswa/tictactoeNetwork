@@ -22,12 +22,28 @@ typedef vector<unsigned long> vectLong;
 
 #define SMARTPEER_CLIENT_PORT 9000
 #define SMARTPEER_SERVER_PORT 10000
+#define SMARTPEER_HTTP_PORT 11000
+
+#define SELECT_TIMEOUT_SEC 10
+#define SELECT_TIMEOUT_USEC (SELECT_TIMEOUT_SEC * 1000)
+
+string IpAddrToString(unsigned long nIpv4);
+unsigned long StringToIpInt(string SIP);
+
 
 #define INIT_MATCH 1
 #define ATTACH_MATCH 2
 
 class CMatch;
 class CConn;
+
+class CWrk
+{
+public:
+	void *pObject;
+	void *pData;
+	int nLen;
+};
 
 class CPlayer
 {
@@ -101,18 +117,18 @@ public :
 	CPlayer* returnPlayer(unsigned long nIndex);
 	//unsigned long FindMatchByPlayer(unsigned long nIPv4);
 	CMatchStatistics* returnStatistics(unsigned long nMatchId);
-	void returnHtmlMatchStatistics();
+	string returnHtmlMatchStatistics();
 	void attachPlayer(CPlayer *pPlayer);
 
 	// public APIs
-	unsigned long doSnapshotService();
-	unsigned long doSocketListen();
-	unsigned long doReporting();
+	void doSnapshotService();
+	void doSocketListen();
+	void doReporting();
 
 	void processIncomingMessage(tictacpacket thePacket);
 	long parsePacket(unsigned char *pSrc, unsigned long nLen);
 	//int sendResponse(tictacpacket *pSrcPacket);
-	int processRegisterMessage(tictacpacket *pPacket,struct sock_addr *pClientAddr);
+	int processRegisterMessage(tictacpacket *pPacket);
 	int processSnapshotMessage(tictacpacket *pPacket);
 	int processTerminateMessage(tictacpacket *pPacket);
 	int processEndMessage(tictacpacket *pPacket);
@@ -135,12 +151,15 @@ public:
 	map<unsigned long, CPlayer*> _mapPlayers;
 	pthread_mutex_t lockPlayers;
 
+	// Server IP details
+	string sServerIp;
+	unsigned long nSIP;
 };
 
 class CConn
 {
 public:
-	void prepareAddress(struct sock_addr *pSrc);
+	void prepareAddress(struct sockaddr_in *pSrc);
 	int sendMessage(void *pMsg, unsigned long nLen);
 
 public:

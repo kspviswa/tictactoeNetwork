@@ -36,7 +36,7 @@ void displayErrorAndQuit(int nError)
 	cout << "Usage" << endl;
 	cout << "+++++" << endl;
 	cout << endl;
-	cout << "smartserver <server listening port> <timer for snapshot in secs>" << endl;
+	cout << "smartserver <server listening ip>" << endl;
 	cout << "smartserver -h for help" << endl;
 	exit(-1);
 }
@@ -58,13 +58,13 @@ unsigned long str2uint32 (char const *s)
 void* SnapshotService(void *pObj)
 {
 	CController *pController = (CController*)pObj;
-	pController->doSnapshotService();
+	//pController->doSnapshotService();
 }
 
 void* SocketListenService(void *pObj)
 {
 	CController *pController = (CController*)pObj;
-	pController->doSocketListen()
+	pController->doSocketListen();
 }
 
 void* ReportingService(void *pObj)
@@ -72,33 +72,21 @@ void* ReportingService(void *pObj)
 	CController *pController = (CController*)pObj;
 	pController->doReporting();
 }
+
 int main(int argc, char *argv[])
 {
 	/**
-	 * As of now I am living with 2 args
-	 * Arg 1 => Listening port for the server
+	 * As of now I am living with 1 args
+	 * Arg 1 => Listening IP for server. To be filled in tictacpacket
 	 * Arg 2 => Timer for querying the snapshots from clients.
 	 *
-	 * So the argc will be prog-name + 2 args = 3
+	 * So the argc will be prog-name + 1 args = 2
 	 */
 
 	// Sanity check
-	if(argc < 1 || argc > 3)
+	if(argc < 1 || argc > 2)
 	{
 		displayErrorAndQuit(-1);
-	}
-
-	nServerport = str2uint32(argv[1]);
-	nTimer = str2uint32(argv[2]);
-
-	if(nServerport < 1)
-	{
-		displayErrorAndQuit(-2);
-	}
-
-	if(nTimer < 0)
-	{
-		displayErrorAndQuit(-3);
 	}
 
 	/**
@@ -131,13 +119,17 @@ int main(int argc, char *argv[])
 	 */
 
 	theGameController.init();
+	theGameController.sServerIp = string(argv[1]);
+	theGameController.nSIP = StringToIpInt(theGameController.sServerIp);
+
+
 	pthread_t socketThread, snapshotThread, reportingThread;
 	pthread_create(&socketThread, NULL, SocketListenService, &theGameController);
-	pthread_create(&snapshotThread, NULL, SnapshotService, &theGameController);
+	//pthread_create(&snapshotThread, NULL, SnapshotService, &theGameController);
 	pthread_create(&reportingThread, NULL, ReportingService, &theGameController);
 
 	pthread_join(socketThread, NULL);
-	pthread_join(snapshotThread, NULL);
+	//pthread_join(snapshotThread, NULL);
 	pthread_join(reportingThread, NULL);
 
 
