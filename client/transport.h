@@ -29,7 +29,7 @@ class Socket
 
 	Socket();
 	~Socket();
-	int Create(ulong UdpPort);
+	int Create(string selfIP, ulong UdpPort);
 	bool Bind();
 	bool Listen(int que);
 	bool Accept(Socket &clientSock);
@@ -67,8 +67,8 @@ class UDPDatagram : public IDataCommunication
 	~UDPDatagram();
 	void sendData(Socket *);
 	void *recvData(void);
-        void sendDataToServer(string data);
-        void sendDataToClient(string data);
+        void sendDataToServer(string serverIP, string data);
+        void sendDataToClient(string peerIP, string data);
         void processDataComingFromSocket (char *pProtoBuf, int nLen);
 	Socket * getServerSocket() {  return serverSocket; }
 	Socket * getClientSocket() {  return clientSocket; }

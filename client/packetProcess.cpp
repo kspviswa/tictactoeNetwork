@@ -13,6 +13,7 @@
 #include "headers.h"
 
 extern UINT1 gNewResume;
+extern tUserData gLocalGameState;
 
 /* CPlayer Constructor */
 CPlayer::CPlayer()
@@ -70,41 +71,36 @@ void CPlayer::processIncomingMessage(tictacpacket thePacket)
 
 int CPlayer::processOkMessage(tictacpacket *pPacket)
 {
-    tUserData user_record;
-
     cout << "I am inside Function " << __func__ << endl;
 
-    user_record.lFlag = FIRST_X;
-    user_record.rFlag = SECOND_O;
+    gLocalGameState.lFlag = FIRST_X;
+    gLocalGameState.rFlag = SECOND_O;
 
-    // gui_update_data (user_record); 
+    // gui_update_data (gLocalGameState);
     return 0;
 }
 int CPlayer::processStartMessage(tictacpacket *pPacket)
 {
-    tUserData user_record;
-
     cout << "I am inside Function " << __func__ << endl;
 
-    user_record.lFlag = SECOND_O;
-    user_record.rFlag = FIRST_X;
+    gLocalGameState.lFlag = SECOND_O;
+    gLocalGameState.rFlag = FIRST_X;
 
-    strcpy(user_record.rplayerName, pPacket->playername().c_str());
+    strcpy(gLocalGameState.rplayerName, pPacket->playername().c_str());
+    strcpy(gLocalGameState.PeerIP, IntToString(pPacket->ipv4opp()).c_str());
 
-    // gui_update_data (user_record); 
+    // gui_update_data (gLocalGameState); 
     return 0;
 }
 int CPlayer::processResumeMessage(tictacpacket *pPacket)
 {
-    tUserData user_record;
-
     cout << "I am inside Function " << __func__ << endl;
 
-    user_record.lFlag = pPacket->state()[MAX_SQUARE];
+    gLocalGameState.lFlag = pPacket->state()[MAX_SQUARE];
 
     // SANKAR GUI function
 
-    // gui_update_data (user_record); 
+    // gui_update_data (gLocalGameState); 
     // gui_update_board();
     gNewResume = SET;
 
@@ -115,6 +111,7 @@ int CPlayer::processMoveMessage(tictacpacket *pPacket)
     cout << "I am inside Function " << __func__ << endl;
 
     UpdateBoard(*pPacket);
+    strcpy(gLocalGameState.PeerIP, IntToString(pPacket->ipv4opp()).c_str());
     return 0;
 }
 

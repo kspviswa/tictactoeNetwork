@@ -1,6 +1,7 @@
 #include "iostream"
 #include"headers.h"
 #include"tictac.h"
+#include <sstream>
 #include "transport.h"
 using namespace tictac;
 using namespace std;
@@ -11,6 +12,13 @@ tUserData gLocalGameState;
 
 /* Create an UPDPacket Object - which will create Two Sockets */  
 UDPDatagram udpPacket;
+string IntToString(unsigned long n)
+{
+	stringstream ss;
+	ss << n;
+	return ss.str();
+}
+
 
 unsigned long StringToIpInt(string SIP)
 {
@@ -83,13 +91,15 @@ UINT1 SendMove( tUserData user_record )
 {
     UINT1 retVal = FAILURE;
     tictacpacket localMove;
+    string peerIP(gLocalGameState.PeerIP);
 
     localMove.set_msgtype(tictacpacket::MOVE);
     localMove.set_state(user_record.game_state);
+    localMove.set_ipv4opp(StringToIpInt(gLocalGameState.LocalIP));
 
     //TATA - move call with "localMove"
     string data = localMove.SerializeAsString();
-    udpPacket.sendDataToServer(data);
+    udpPacket.sendDataToClient(peerIP, data);
 
     //Update the Stable state after successful sent to player
     strncpy(gLocalGameState.game_state, user_record.game_state, MAX_SQUARE);
@@ -109,8 +119,11 @@ UINT1 UpdateBoard( tictacpacket remoteChange )
 	//show_poop_up("SNAPSHOT was Old, so updatded with current player data\n");
     }
 
+    strncpy( gLocalGameState.rplayerName, remoteChange.playername().c_str(), MAX_NAME);
+    strncpy( gLocalGameState.game_state, remoteChange.state().c_str(), MAX_SQUARE);
+    
     // SANKAR GUI function
-    //gui_update_board(remoteChange.state());
+    //gui_update_board ( gLocalGameState );
 
     // Calculate Game Status and inform GUI
     switch( CalculateGameStatus(remoteChange.state().c_str()))
@@ -132,13 +145,6 @@ UINT1 UpdateBoard( tictacpacket remoteChange )
 	    printf("game running\n");
     }
 
-    //Update the Stable state after successful sent to GUI
-    if (retVal == SUCCESS)
-    {
-	/*gLocalGameState.set_state(remoteChange.state());*/
-	strncpy(gLocalGameState.game_state, remoteChange.state().c_str(), MAX_SQUARE);
-    }
-
     return retVal;
 }
 
@@ -151,6 +157,8 @@ UINT1 RegisterPlayer(tUserData *user_record )
     tictacpacket	register_resp;
     UINT1 ret_Val = SUCCESS, iret1 = 0;
 
+    string serverIP(user_record->ServerIP);
+    string selfIP  (user_record->LocalIP);
 
     // Thread for sending snapshot every 5 seconds
     pthread_t snap_shot_thread;
@@ -163,8 +171,8 @@ UINT1 RegisterPlayer(tUserData *user_record )
      * One socket listening towards the Server
      * another socket listening towars the Peer - Client
      */
-    udpPacket.getServerSocket()->Create(SMARTPEER_CLIENT_LISTENING_PORT_SERVER);
-    udpPacket.getClientSocket()->Create(SMARTPEER_CLIENT_LISTENING_PORT_CLIENT);
+    udpPacket.getServerSocket()->Create(selfIP, SMARTPEER_CLIENT_LISTENING_PORT_SERVER);
+    udpPacket.getClientSocket()->Create(selfIP, SMARTPEER_CLIENT_LISTENING_PORT_CLIENT);
 
     // Create independent thread each of which will execute function 
 
@@ -178,44 +186,17 @@ UINT1 RegisterPlayer(tUserData *user_record )
     {
 	printf("Thread SUCCESSFULLY created \n");
     }
-    register_msg.set_ipv4(StringToIpInt("127.0.0.1"));
+    register_msg.set_ipv4(StringToIpInt(user_record->LocalIP));
     register_msg.set_msgtype ( tictacpacket::REGISTER );
     register_msg.set_playername ( user_record->lplayerName );
 
     // Register call with "register_msg"
     string data = register_msg.SerializeAsString();
-    udpPacket.sendDataToServer(data);
+    udpPacket.sendDataToServer(serverIP, data);
 
-#if 0
-    // Choose the user sign based upon registration sequance
-    // First player  - 'X'
-    // Second player - 'O'
-    switch(register_resp.msgtype())
-    {
-	case tictacpacket::OK:
-	    user_record->lFlag = FIRST_X;
-	    user_record->rFlag = SECOND_O;
-	    break;
+    strcpy(gLocalGameState.ServerIP, user_record->ServerIP);
+    strcpy(gLocalGameState.LocalIP, user_record->LocalIP);
 
-	case tictacpacket::START:
-	    user_record->lFlag = SECOND_O;
-	    user_record->rFlag = FIRST_X;
-	    strcpy(user_record->rplayerName, register_msg.playername().c_str());
-	    break;
-
-	case tictacpacket::RESUME:
-	    user_record->lFlag = register_msg.state()[MAX_SQUARE];
-	    // SANKAR GUI function
-	    // gui_update_board();
-	    gNewResume = SET;
-	    break;
-
-	default:
-
-	    printf("resiter failed, unexpected msg_type");
-	    //show_poop_up("resiter failed, unexpected msg_type");
-    }
-#endif
     if (SUCCESS != pthread_create(&snap_shot_thread, NULL, SendSnapShot, (void *) &gLocalGameState.lFlag))
     {
 	printf("not able to create snapshot thread\n");
@@ -268,6 +249,7 @@ int main ()
 {
     UINT1 retVal = SUCCESS, option;
     tUserData userDate;
+    string peerIP, data;
     bzero(&userDate, sizeof(tUserData));
 
     do
@@ -285,12 +267,12 @@ int main ()
 
 	    case '1':
 		strcpy(userDate.game_state, "OXOXOXZXO");
-		udpPacket.sendDataToClient("MESSAGE FROM CLIENT");
+		//udpPacket.sendDataToClient("MESSAGE FROM CLIENT");
 		break;
 
 	    case '2':
 		strcpy(userDate.lplayerName, "Venkat");
-		RegisterPlayer(&userDate);
+		//RegisterPlayer(&userDate);
 		break;
 
 	    default:

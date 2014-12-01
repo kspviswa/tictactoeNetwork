@@ -27,7 +27,7 @@ Socket::~Socket()
 }
 
 /* This function needs to be invoked during Registration of a client */
-int Socket::Create( /* IP Address */ ulong UdpPort)
+int Socket::Create( string selfIP,  ulong UdpPort)
 {
     /*Create UDP socket*/
     m_sockFD = socket(AF_INET, SOCK_DGRAM, 0);
@@ -37,7 +37,8 @@ int Socket::Create( /* IP Address */ ulong UdpPort)
     /*Configure settings in address struct*/
     m_serverAddr.sin_family = AF_INET;
     m_serverAddr.sin_port = htons(UdpPort);
-    m_serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    //m_serverAddr.sin_addr.s_addr = inet_addr(selfIP.c_str());
+    m_serverAddr.sin_addr.s_addr = inet_addr(selfIP.c_str());
     memset(m_serverAddr.sin_zero, '\0', sizeof m_serverAddr.sin_zero);
 
     Bind();
@@ -88,10 +89,10 @@ UDPDatagram :: ~UDPDatagram()
     clientSocket = NULL;
 }
 
-void UDPDatagram::sendDataToServer(string data)
+void UDPDatagram::sendDataToServer(string serverIP, string data)
 {
 	
-    printf("\r sendDataToServer = %s\r\n", data.c_str());
+    printf("\r ServerIp = %s, sendDataToServer = %s\r\n", serverIP.c_str(), data.c_str());
 
     /*Create UDP socket*/
     int nSock  = socket(AF_INET, SOCK_DGRAM, 0);
@@ -102,7 +103,7 @@ void UDPDatagram::sendDataToServer(string data)
     m_serverAddr.sin_family = AF_INET;
     m_serverAddr.sin_port = htons(SMARTPEER_SERVER_PORT);
     /* get the server ip from sandeep */
-    m_serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    m_serverAddr.sin_addr.s_addr = inet_addr(serverIP.c_str());
     memset(m_serverAddr.sin_zero, '\0', sizeof m_serverAddr.sin_zero);
 
     /*Send message to server*/
@@ -122,7 +123,7 @@ void UDPDatagram::sendDataToServer(string data)
 
 }
 
-void UDPDatagram::sendDataToClient(string data)
+void UDPDatagram::sendDataToClient(string peerIP, string data)
 {
     printf("\r sendDataToClient = %s\r\n", data.c_str());
 
@@ -136,7 +137,7 @@ void UDPDatagram::sendDataToClient(string data)
     m_serverAddr.sin_port = htons(SMARTPEER_CLIENT_LISTENING_PORT_CLIENT);
 
     /* get the client ip from sandeep */
-    m_serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    m_serverAddr.sin_addr.s_addr = inet_addr(peerIP.c_str());
     memset(m_serverAddr.sin_zero, '\0', sizeof m_serverAddr.sin_zero);
 
     /*Send message to server*/

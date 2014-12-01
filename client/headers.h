@@ -47,6 +47,9 @@ typedef struct user_data {
 				UINT1 rFlag;
 				char lplayerName[MAX_NAME];
 				char rplayerName[MAX_NAME];
+                		char ServerIP[16];
+                		char LocalIP[16];
+                		char PeerIP[16];
 			  }tUserData;
 
 /*UINT1 SetStableState ( UINT2 StateData, UINT1 stateFlag );
@@ -62,5 +65,7 @@ UINT1 InitializeState();
 void *SendSnapShot(void* user_sign);
 void form_state ( char *game_state, char *user_sign , tictacpacket *packet);
 #define SET_ERROR(str) printf("%s", str);
+unsigned long StringToIpInt(string SIP);
+string IntToString(unsigned long n);
 
 #endif /* __HEADERS_H__ */
