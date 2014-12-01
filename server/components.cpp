@@ -69,29 +69,38 @@ string CController::returnHtmlMatchStatistics()
 	map<unsigned long, CMatchStatistics*> stat;
 	map<unsigned long, CMatchStatistics*>::iterator iter;
 
+	// index is IPv4 of connection
+        map<unsigned long, CPlayer*> playstat;
+        map<unsigned long, CPlayer*>::iterator iter2;
+
+	pthread_mutex_lock(&lockPlayers);
+	playstat = _mapPlayers;
+	pthread_mutex_unlock(&lockPlayers);
+
+
 	pthread_mutex_lock(&lockStatistics);
 	stat = _mapStatistics;
 	pthread_mutex_unlock(&lockStatistics);
 
-	if(stat.size() > 0)
+	if(playstat.size() > 0)
 	{
 		// Get the player statistics first
 		string sPlayerstat = "<h3><u>Registered players</u></h3><br><p>";
 		sPlayerstat += string("<table border='5'><tr><th>Name</th><th>IP Address</th></tr>");
 
 
-		for(iter = stat.begin(); iter != stat.end(); ++iter)
+		for(iter2 = playstat.begin(); iter2 != playstat.end(); ++iter2)
 		{
 			sPlayerstat += string("<tr><td>");
-			sPlayerstat += iter->second->sPlayer1;
+			sPlayerstat += iter2->second->sName;
 			sPlayerstat += string("</td><td>");
-			sPlayerstat += iter->second->sIP1;
+			sPlayerstat += iter2->second->sIP;
 			sPlayerstat += string("</td></tr>");
-			sPlayerstat += string("<tr><td>");
-			sPlayerstat += iter->second->sPlayer2;
-			sPlayerstat += string("</td><td>");
-			sPlayerstat += iter->second->sIP2;
-			sPlayerstat += string("</td></tr>");
+			//sPlayerstat += string("<tr><td>");
+			//sPlayerstat += iter->second->sPlayer2;
+			//sPlayerstat += string("</td><td>");
+			//sPlayerstat += iter->second->sIP2;
+			//sPlayerstat += string("</td></tr>");
 		}
 
 		sPlayerstat += string("/table");
@@ -143,6 +152,7 @@ void* processMessageHelper(void *pArg)
 {
 	if(pArg)
 	{
+		cout << "Inside processMessageHelper" << endl;
 		CWrk *wrk = (CWrk*)pArg;
 		CController *pCtrl = (CController*)wrk->pObject;
 		int nLen = wrk->nLen;
@@ -287,6 +297,7 @@ void CController::processIncomingMessage(tictacpacket thePacket)
 	 * the thePacket is complete. else parse would have been failed.
 	 */
 
+	cout << "Inside parsePacket" << endl;
 	if(!thePacket.IsInitialized())
 	{
 		cout << "Malformed packet" << endl;
@@ -297,6 +308,7 @@ void CController::processIncomingMessage(tictacpacket thePacket)
 	{
 	case tictacpacket::REGISTER :
 		// A new client arrived. Please do the needful
+		cout << "Register packet has arrived" << endl;
 		processRegisterMessage(&thePacket);
 		break;
 	case tictacpacket::SNAPSHOTPUT:
@@ -394,6 +406,13 @@ int CController::initOrAttachNewMatch(CPlayer *pPlayer)
 		pthread_mutex_lock(&lockMatches);
 		if(pNewMatch)
 		{
+			// Check whether re-registration happens
+			if(pNewMatch->m_hPlayer1 == pPlayer)
+			{
+				cout << "Re-Registration detected. Silently discarded" << endl;
+				pthread_mutex_unlock(&lockMatches);
+				return nRet;
+			}
 			// Some body already waiting
 			nRet = ATTACH_MATCH;
 			pNewMatch->m_hPlayer2 = pPlayer;
@@ -430,13 +449,14 @@ int CController::processRegisterMessage(tictacpacket *pPacket)
 	 * The algo is to search the _mapPlayers with incoming ipv4
 	 * If you find a match, then proceed with either RESUME / OK / START
 	 */
-
+	cout << "Processing register packet" << endl;
 	// Find a match first
 	long nMatch = FindPlayerMatch(pPacket->ipv4());
 	CPlayer *pNewPlayer;
 
-	if(nMatch != -1)
+	if(nMatch == -1)
 	{
+		cout << "New player arrived" << endl;
 		// Looks like a new player. Register them
 		pNewPlayer = new CPlayer();
 
@@ -459,6 +479,7 @@ int CController::processRegisterMessage(tictacpacket *pPacket)
 	}
 	else
 	{
+		cout << "Returning player " << nMatch << endl;
 		pNewPlayer = returnPlayer(nMatch);
 	}
 
@@ -518,7 +539,10 @@ int CController::processRegisterMessage(tictacpacket *pPacket)
 				break;
 			}
 			default:
-				break;
+			cout << "Default case" << endl;
+			// cook a OK RESPONSE and send out
+			dResponse.set_msgtype(tictacpacket::OK);
+			break;
 			}
 		}
 
@@ -736,6 +760,7 @@ int CController::processEndMessage(tictacpacket *pPacket)
  */
 long CController::parsePacket(unsigned char *pSrc, unsigned long nLen)
 {
+	cout << "Inside parse packet" << endl;
 	tictacpacket thePacket;
 	if(thePacket.ParseFromArray(pSrc, nLen))
 	{
@@ -744,7 +769,10 @@ long CController::parsePacket(unsigned char *pSrc, unsigned long nLen)
 		return 0; // success
 	}
 	else
+{
+	cout << "Parse packet failed!!!!!!!" << endl;
 		return -1; // Failure
+}
 }
 
 int CController::sendPacketToClient(tictacpacket *pSrcPacket, CPlayer *pPlayer)
@@ -754,6 +782,7 @@ int CController::sendPacketToClient(tictacpacket *pSrcPacket, CPlayer *pPlayer)
 		if(pPlayer->connObject.nSockId > 0)
 		{
 			string data = pSrcPacket->SerializeAsString();
+			cout << "Sending data to client" << endl;
 			pPlayer->connObject.sendMessage((void*)const_cast<char*>(data.c_str()), data.length());
 		}
 	}

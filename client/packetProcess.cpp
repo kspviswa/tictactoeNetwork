@@ -10,6 +10,9 @@
 #include "iostream"
 #include "packetProcess.h"
 #include "tictac.h"
+#include "headers.h"
+
+extern UINT1 gNewResume;
 
 /* CPlayer Constructor */
 CPlayer::CPlayer()
@@ -57,7 +60,7 @@ void CPlayer::processIncomingMessage(tictacpacket thePacket)
 	    processResumeMessage(&thePacket);
 	    break;
 	case tictacpacket::MOVE:
-            processEndMessage(&thePacket);
+            processMoveMessage(&thePacket);
 	    break;
 	default:
 	  cout << "ERROR: Invalid Packet Received" << endl;
@@ -67,22 +70,51 @@ void CPlayer::processIncomingMessage(tictacpacket thePacket)
 
 int CPlayer::processOkMessage(tictacpacket *pPacket)
 {
+    tUserData user_record;
+
     cout << "I am inside Function " << __func__ << endl;
+
+    user_record.lFlag = FIRST_X;
+    user_record.rFlag = SECOND_O;
+
+    // gui_update_data (user_record); 
     return 0;
 }
 int CPlayer::processStartMessage(tictacpacket *pPacket)
 {
+    tUserData user_record;
+
     cout << "I am inside Function " << __func__ << endl;
+
+    user_record.lFlag = SECOND_O;
+    user_record.rFlag = FIRST_X;
+
+    strcpy(user_record.rplayerName, pPacket->playername().c_str());
+
+    // gui_update_data (user_record); 
     return 0;
 }
 int CPlayer::processResumeMessage(tictacpacket *pPacket)
 {
+    tUserData user_record;
+
     cout << "I am inside Function " << __func__ << endl;
+
+    user_record.lFlag = pPacket->state()[MAX_SQUARE];
+
+    // SANKAR GUI function
+
+    // gui_update_data (user_record); 
+    // gui_update_board();
+    gNewResume = SET;
+
     return 0;
 }
 int CPlayer::processMoveMessage(tictacpacket *pPacket)
 {
     cout << "I am inside Function " << __func__ << endl;
+
+    UpdateBoard(*pPacket);
     return 0;
 }
 

@@ -1,3 +1,6 @@
+#ifndef __HEADERS_H__
+#define __HEADERS_H__
+
 #include<stdio.h>
 #include<string.h>
 #include<sys/statfs.h>
@@ -59,3 +62,5 @@ UINT1 InitializeState();
 void *SendSnapShot(void* user_sign);
 void form_state ( char *game_state, char *user_sign , tictacpacket *packet);
 #define SET_ERROR(str) printf("%s", str);
+
+#endif /* __HEADERS_H__ */
