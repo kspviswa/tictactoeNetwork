@@ -103,33 +103,33 @@ string CController::returnHtmlMatchStatistics()
 			//sPlayerstat += string("</td></tr>");
 		}
 
-		sPlayerstat += string("/table");
+		sPlayerstat += string("</table>");
 
 		// Get the match statistics
 		string sMatchstat = "<h3><u>Live match updates</u></h3><br><p>";
 		sMatchstat += string("<table border='5'><tr><th>Match ID</th><th>Player 1</th><th>Player 2</th><th>Match state</th><th>P1-State</th><th>P2-State</th></tr>");
-
+		string sMatchstat2;
 		for(iter = stat.begin(); iter != stat.end(); ++iter)
 		{
-			sMatchstat += string("<tr><td>");
+			sMatchstat2 += string("<tr><td>");
 
-			sMatchstat += IntToString(iter->second->nMatchId);
-			sMatchstat += string("</td><td>");
-			sMatchstat += iter->second->sPlayer1;
-			sMatchstat += string("</td></tr>");
-			sMatchstat += string("<tr><td>");
-			sMatchstat += iter->second->sPlayer2;
-			sMatchstat += string("</td><td>");
-			sMatchstat += iter->second->returnStrStateMatch(iter->second->eState);
-			sMatchstat += string("</td><td>");
-			sMatchstat += iter->second->returnStrStatePlayer(iter->second->eP1State);
-			sMatchstat += string("</td><td>");
-			sMatchstat += iter->second->returnStrStatePlayer(iter->second->eP2State);
+			sMatchstat2 += IntToString(iter->second->nMatchId);
+			sMatchstat2 += string("</td><td>");
+			sMatchstat2 += iter->second->sPlayer1;
+			sMatchstat2 += string("</td><td>");
+			sMatchstat2 += iter->second->sPlayer2;
+			sMatchstat2 += string("</td><td>");
+			sMatchstat2 += iter->second->returnStrStateMatch(iter->second->eState);
+			sMatchstat2 += string("</td><td>");
+			sMatchstat2 += iter->second->returnStrStatePlayer(iter->second->eP1State);
+			sMatchstat2 += string("</td><td>");
+			sMatchstat2 += iter->second->returnStrStatePlayer(iter->second->eP2State);
 
-			sMatchstat += string("</td></tr>");
+			sMatchstat2 += string("</td></tr>");
 		}
 
-		sMatchstat += string("/table");
+		sMatchstat += sMatchstat2;
+		sMatchstat += string("</table>");
 
 		// Combine player & match statistics
 		sHtml += sPlayerstat + sMatchstat;
@@ -520,11 +520,11 @@ int CController::processRegisterMessage(tictacpacket *pPacket)
 				CMatchStatistics *pStat = new CMatchStatistics();
 				pStat->eP1State = PLAYING;
 				pStat->eP2State = PLAYING;
-				pStat->nMatchId = pMatch->nMatchId;
-				pStat->sIP1 = pMatch->m_hPlayer1->sIP;
-				pStat->sIP2 = pMatch->m_hPlayer2->sIP;
-				pStat->sPlayer1 = pMatch->m_hPlayer1->sName;
-				pStat->sPlayer2 = pMatch->m_hPlayer2->sName;
+				pStat->nMatchId = pNewMatch->nMatchId;
+				pStat->sIP1 = pNewMatch->m_hPlayer1->sIP;
+				pStat->sIP2 = pNewMatch->m_hPlayer2->sIP;
+				pStat->sPlayer1 = pNewMatch->m_hPlayer1->sName;
+				pStat->sPlayer2 = pNewMatch->m_hPlayer2->sName;
 
 				pthread_mutex_lock(&lockStatistics);
 
@@ -534,8 +534,10 @@ int CController::processRegisterMessage(tictacpacket *pPacket)
 
 				// cook a START RESPONSE and send out
 				dResponse.set_msgtype(tictacpacket::START);
-				dResponse.set_ipv4opp(pMatch->m_hPlayer2->nIPv4);
-				dResponse.set_playername(pMatch->m_hPlayer2->sName);
+				dResponse.set_ipv4opp(pNewMatch->m_hPlayer2->nIPv4);
+				dResponse.set_playername(pNewMatch->m_hPlayer2->sName);
+
+				pNewMatch = NULL;				
 				break;
 			}
 			default:
@@ -602,7 +604,7 @@ string CMatchStatistics::returnStrStatePlayer(ePlayerState nState)
 	default:
 		break;
 	}
-
+	return state;
 }
 
 /**
@@ -814,5 +816,6 @@ int CConn::sendMessage(void *pMsg, unsigned long nLen)
 {
 	int nRet;
 	nRet = sendto(nSockId,pMsg,nLen,0,(struct sockaddr *)&clientAddr,sizeof(clientAddr));
+	cout << "Sent " << nRet << "bytes to" << IpAddrToString(clientAddr.sin_addr.s_addr) << endl;
 	return nRet;
 }
