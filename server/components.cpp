@@ -534,8 +534,10 @@ int CController::processRegisterMessage(tictacpacket *pPacket)
 
 				// cook a START RESPONSE and send out
 				dResponse.set_msgtype(tictacpacket::START);
-				dResponse.set_ipv4opp(pNewMatch->m_hPlayer2->nIPv4);
-				dResponse.set_playername(pNewMatch->m_hPlayer2->sName);
+				dResponse.set_ipv4opp(pNewMatch->m_hPlayer1->nIPv4);
+				dResponse.set_playername(pNewMatch->m_hPlayer1->sName);
+
+				cout << "Sending player" << pNewMatch->m_hPlayer1->sName << " details.." << endl;
 
 				pNewMatch = NULL;				
 				break;
