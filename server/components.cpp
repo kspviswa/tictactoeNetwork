@@ -692,6 +692,8 @@ int CController::processTerminateMessage(tictacpacket *pPacket)
 				pStat->eP2State = TERMINATED;
 				pStat->eP1State = WON;
 			}
+
+			detachPlayers(pMatch);
 		}
 	}
 	return 0;
@@ -765,9 +767,24 @@ int CController::processEndMessage(tictacpacket *pPacket)
 			default:
 				break;
 			}
+
+			detachPlayers(pMatch);
 		}
 	}
 	return 0;
+}
+
+void CController::detachPlayers(CMatch *pMatch)
+{
+	if(pMatch && pMatch->m_hPlayer1 && pMatch->m_hPlayer2)
+	{
+		pthread_mutex_lock(&lockPlayers);
+		_mapPlayers.erase(pMatch->m_hPlayer1->nIPv4);
+		_mapPlayers.erase(pMatch->m_hPlayer2->nIPv4);
+		pthread_mutex_unlock(&lockPlayers);
+	}
+
+	//ToDo : I still have the CPlayer object undestructed. May eat memory.
 }
 
 /**

@@ -139,6 +139,7 @@ public :
 	CMatchStatistics* returnStatistics(unsigned long nMatchId);
 	string returnHtmlMatchStatistics();
 	void attachPlayer(CPlayer *pPlayer);
+	void detachPlayers(CMatch *pMatch);
 
 	// public APIs
 	void doSnapshotService();
