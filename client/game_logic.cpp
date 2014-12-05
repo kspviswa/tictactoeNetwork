@@ -1,14 +1,20 @@
 #include "iostream"
-#include"headers.h"
-#include"tictac.h"
+#include "headers.h"
+#include "tictac.h"
 #include <sstream>
 #include "transport.h"
+#include "headers.h"
+#include "../game2.h"
+
 using namespace tictac;
 using namespace std;
 
 UINT1 gNewResume = RESET;
 /*tictacpacket gLocalGameState;*/
 tUserData gLocalGameState;
+
+Game2 *Game_Ref;
+
 
 /* Create an UPDPacket Object - which will create Two Sockets */  
 UDPDatagram udpPacket;
@@ -19,6 +25,12 @@ string IntToString(unsigned long n)
 	return ss.str();
 }
 
+int Store_Pointer(void * gPtr)
+{
+    Game_Ref = (Game2 *)gPtr;
+    printf("Store_pointer = %p\n",gPtr);
+    return 0;
+}
 
 unsigned long StringToIpInt(string SIP)
 {
@@ -27,42 +39,23 @@ unsigned long StringToIpInt(string SIP)
         return nIP;
 }
 
-/* calculate game status */
-UINT1 CalculateGameStatus( const char *square )
+string IpAddrToString(unsigned long nIpv4)
 {
-    UINT1 ret_val = RUNNING;
-    UINT1 loop;
+    char szIP[INET_ADDRSTRLEN];
+    string sIP;
 
-    for (loop=8; loop>=0; loop-- )
-    {
-	if (square[loop] == NOT_INTIALISED)
-	{
-	    ret_val = RUNNING;
-	    break;
-	}
-    }
-    if (loop == 0)
-	ret_val = tictacpacket::DRAW;
+    inet_ntop(AF_INET, &nIpv4, szIP, INET_ADDRSTRLEN);
 
-    if (square[0] == square[1] && square[1] == square[2])
-	ret_val = tictacpacket::WON;
-    else if (square[3] == square[4] && square[4] == square[5])
-	ret_val = tictacpacket::WON;
-    else if (square[6] == square[7] && square[7] == square[8])
-	ret_val = tictacpacket::WON;
-    else if (square[0] == square[3] && square[3] == square[6])
-	ret_val = tictacpacket::WON;
-    else if (square[1] == square[4] && square[4] == square[7])
-	ret_val = tictacpacket::WON;
-    else if (square[2] == square[5] && square[5] == square[8])
-	ret_val = tictacpacket::WON;
-    else if (square[0] == square[4] && square[4] == square[8])
-	ret_val = tictacpacket::WON;
-    else if (square[2] == square[4] && square[4] == square[6])
-	ret_val = tictacpacket::WON;
+    sIP.assign(szIP, strlen(szIP));
 
-    return ret_val;
+    return sIP;
 }
+
+
+/* calculate game status */
+
+
+
 
 UINT1 is_board_update ( char *remote_str )
 {
@@ -96,57 +89,55 @@ UINT1 SendMove( tUserData user_record )
     localMove.set_msgtype(tictacpacket::MOVE);
     localMove.set_state(user_record.game_state);
     localMove.set_ipv4opp(StringToIpInt(gLocalGameState.LocalIP));
-
-    //TATA - move call with "localMove"
-    string data = localMove.SerializeAsString();
-    udpPacket.sendDataToClient(peerIP, data);
+    localMove.set_ipv4(StringToIpInt(gLocalGameState.LocalIP));
+    localMove.set_playername(gLocalGameState.lplayerName);
 
     //Update the Stable state after successful sent to player
     strncpy(gLocalGameState.game_state, user_record.game_state, MAX_SQUARE);
 
+    //TATA - move call with "localMove"
+    string data = localMove.SerializeAsString();
+    printf ("User_Record.gamestate = %s\n", user_record.game_state);
+    printf ("Data Sent fro Game logic = %s\n", data.c_str());
+
+    udpPacket.sendDataToClient(peerIP, data);
+
     return retVal;
 }
 
-/* Got a move from other player updating to own board */
 UINT1 UpdateBoard( tictacpacket remoteChange )
 {
 
     UINT1		retVal = FAILURE;
 
-    if ( (gNewResume == SET) &&
-	    (FAILURE == is_board_update(const_cast<char*>(remoteChange.state().c_str()))))
+    /*if ( (gNewResume == SET) &&
+        (FAILURE == is_board_update(const_cast<char*>(remoteChange.state().c_str()))))
     {
-	//show_poop_up("SNAPSHOT was Old, so updatded with current player data\n");
+        Game_Ref->show_pop_up("SNAPSHOT was Old, so updatded with current player data\n");
+    }*/
+
+    if (strlen(gLocalGameState.PeerIP) == 0)
+    {
+        memcpy(gLocalGameState.PeerIP, IpAddrToString(remoteChange.ipv4opp()).c_str(),sizeof(gLocalGameState.PeerIP) );
     }
 
-    strncpy( gLocalGameState.rplayerName, remoteChange.playername().c_str(), MAX_NAME);
+    if (strlen(gLocalGameState.rplayerName) == 0)
+    {
+        strncpy( gLocalGameState.rplayerName, remoteChange.playername().c_str(), MAX_NAME);
+        printf("Local Player = %s - Remote Player = %s\n", gLocalGameState.lplayerName,gLocalGameState.rplayerName);
+    }
+
     strncpy( gLocalGameState.game_state, remoteChange.state().c_str(), MAX_SQUARE);
-    
+
+    printf("Update Board - Local Symbol = %s Peer Address = %s\n", gLocalGameState.lFlag == 'X' ? "X":"O", gLocalGameState.PeerIP);
+
     // SANKAR GUI function
-    //gui_update_board ( gLocalGameState );
-
-    // Calculate Game Status and inform GUI
-    switch( CalculateGameStatus(remoteChange.state().c_str()))
-    {
-	case tictacpacket::WON:
-	    //show_poop_up("game WON!!!\n");
-	    break;
-
-	case tictacpacket::LOST:
-	    //show_poop_up("game LOST!!!\n");
-	    break;
-
-	case tictacpacket::DRAW:
-	    //show_poop_up("game DRAW!!!\n");
-	    break;
-
-	default:
-	    //show_poop_up("game running\n");
-	    printf("game running\n");
-    }
+    //Game_Ref->gui_update_board ( gLocalGameState );
 
     return retVal;
 }
+/* Got a move from other player updating to own board */
+
 
 /* Register with with player to start the play */
 /* GUI will call this with player name */
@@ -157,8 +148,13 @@ UINT1 RegisterPlayer(tUserData *user_record )
     tictacpacket	register_resp;
     UINT1 ret_Val = SUCCESS, iret1 = 0;
 
+    memcpy(&gLocalGameState.game_state,"ZZZZZZZZZ",9);
+
     string serverIP(user_record->ServerIP);
     string selfIP  (user_record->LocalIP);
+
+    cout << "Sandeep Local IP from GUI : "<< selfIP.c_str() << endl;
+    cout << "Sandeep Server IP from GUI : "<< serverIP.c_str() << endl;
 
     // Thread for sending snapshot every 5 seconds
     pthread_t snap_shot_thread;
@@ -212,17 +208,23 @@ void *SendSnapShot(void* user_sign)
     tictacpacket snap_msg;
     char state_String[MAX_SQUARE+1];
 
-    snap_msg.set_msgtype(tictacpacket::SNAPSHOTPUT);
+
+    string serverIP(gLocalGameState.ServerIP);
 
     while (1)
     {
 	strncpy(state_String, gLocalGameState.game_state, MAX_SQUARE);
 	state_String[MAX_SQUARE] = *(char *)user_sign;
+    snap_msg.set_msgtype(tictacpacket::SNAPSHOTPUT);
 	snap_msg.set_state(state_String);
+    snap_msg.set_ipv4(StringToIpInt(gLocalGameState.LocalIP));
 
-	// Viswa sendSnap Call with snap_msg
-	//
-	usleep(SNAP_SHOT_FREQ);
+
+    // sending snapshot packet to server
+    printf("Sending snapshot to server");
+    string data = snap_msg.SerializeAsString();
+    udpPacket.sendSnapShotToServer(serverIP, data);
+    sleep(SNAP_SHOT_FREQ);
     }
 
     return 0;
@@ -245,7 +247,18 @@ UINT1 EndGame()
 
 }
 
-int main ()
+void recv_data(tUserData &stUserData)
+{
+    //memcpy(&gLocalGameState.game_state,"OZOZZXZZZ",9);
+    //printf("%s\n", "Data Refreshed");
+
+    //README - GUI Thread will poll the updated data from gLocalGameState.. Please update
+    //the structure whenever possible.
+
+    memcpy(&stUserData,&gLocalGameState,sizeof(gLocalGameState));
+}
+
+/*int main ()
 {
     UINT1 retVal = SUCCESS, option;
     tUserData userDate;
@@ -282,6 +295,6 @@ int main ()
 	}
     }while(option);	
     return retVal;
-}
+}*/
 
 

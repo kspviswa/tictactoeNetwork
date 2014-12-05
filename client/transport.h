@@ -67,6 +67,7 @@ class UDPDatagram : public IDataCommunication
 	~UDPDatagram();
 	void sendData(Socket *);
 	void *recvData(void);
+        void sendSnapShotToServer(string serverIP, string data);
         void sendDataToServer(string serverIP, string data);
         void sendDataToClient(string peerIP, string data);
         void processDataComingFromSocket (char *pProtoBuf, int nLen);

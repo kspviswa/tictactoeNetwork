@@ -152,7 +152,7 @@ void* processMessageHelper(void *pArg)
 {
 	if(pArg)
 	{
-		cout << "Inside processMessageHelper" << endl;
+		//cout << "Inside processMessageHelper" << endl;
 		CWrk *wrk = (CWrk*)pArg;
 		CController *pCtrl = (CController*)wrk->pObject;
 		int nLen = wrk->nLen;
@@ -253,7 +253,7 @@ void CController::doSocketListen()
 		/*
 		 * See if an event occurred on this one
 		 */
-		cout << "Incoming Message" << endl;
+		//cout << "Incoming Message" << endl;
 
 		int nRet;
 		unsigned char *pData = (unsigned char*) malloc(2048);
@@ -297,7 +297,7 @@ void CController::processIncomingMessage(tictacpacket thePacket)
 	 * the thePacket is complete. else parse would have been failed.
 	 */
 
-	cout << "Inside parsePacket" << endl;
+	//cout << "Inside parsePacket" << endl;
 	if(!thePacket.IsInitialized())
 	{
 		cout << "Malformed packet" << endl;
@@ -497,10 +497,24 @@ int CController::processRegisterMessage(tictacpacket *pPacket)
 
 		if(pMatch)
 		{
-			dResponse.set_ipv4opp(pMatch->m_hPlayer2->nIPv4);
+            if(pMatch->m_hPlayer2 == pNewPlayer)
+            {
+                dResponse.set_ipv4opp(pMatch->m_hPlayer1->nIPv4);
+                dResponse.set_playername(pMatch->m_hPlayer1->sName);
+
+                cout << "Sending " << pMatch->m_hPlayer1->sName << endl;
+            }
+            else
+            {
+                dResponse.set_ipv4opp(pMatch->m_hPlayer2->nIPv4);
+                dResponse.set_playername(pMatch->m_hPlayer2->sName);
+
+                cout << "Sending " << pMatch->m_hPlayer2->sName << endl;
+            }
 			dResponse.set_msgtype(tictacpacket::RESUME);
 			dResponse.set_state(pNewPlayer->strState);
-			dResponse.set_playername(pMatch->m_hPlayer2->sName);
+
+            cout << "Sending state " << pNewPlayer->strState << endl; 
 		}
 		else
 		{
@@ -536,9 +550,9 @@ int CController::processRegisterMessage(tictacpacket *pPacket)
 				dResponse.set_msgtype(tictacpacket::START);
 				dResponse.set_ipv4opp(pNewMatch->m_hPlayer1->nIPv4);
 				dResponse.set_playername(pNewMatch->m_hPlayer1->sName);
-
-				cout << "Sending player" << pNewMatch->m_hPlayer1->sName << " details.." << endl;
-
+                cout << "Sending " << pNewMatch->m_hPlayer1->sName << " details to player " << pNewMatch->m_hPlayer2->sName << endl;
+                cout << "IP address of " << pNewMatch->m_hPlayer1->sName << " is " << IpAddrToString(pNewMatch->m_hPlayer1->nIPv4) << endl;
+                cout << "IP address of " << pNewMatch->m_hPlayer2->sName << " is " << IpAddrToString(pNewMatch->m_hPlayer2->nIPv4) << endl;
 				pNewMatch = NULL;				
 				break;
 			}
@@ -764,7 +778,7 @@ int CController::processEndMessage(tictacpacket *pPacket)
  */
 long CController::parsePacket(unsigned char *pSrc, unsigned long nLen)
 {
-	cout << "Inside parse packet" << endl;
+	//cout << "Inside parse packet" << endl;
 	tictacpacket thePacket;
 	if(thePacket.ParseFromArray(pSrc, nLen))
 	{

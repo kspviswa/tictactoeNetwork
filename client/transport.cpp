@@ -89,6 +89,36 @@ UDPDatagram :: ~UDPDatagram()
     clientSocket = NULL;
 }
 
+
+void UDPDatagram::sendSnapShotToServer(string serverIP, string data)
+{
+
+    printf("\r ServerIp = %s, sendDataToServer = %s\r\n", serverIP.c_str(), data.c_str());
+
+    /*Create UDP socket*/
+    int nSock  = socket(AF_INET, SOCK_DGRAM, 0);
+    struct sockaddr_in m_serverAddr;
+    printf(" Local Socket = %d\n", nSock);
+
+    /*Configure settings in address struct*/
+    m_serverAddr.sin_family = AF_INET;
+    m_serverAddr.sin_port = htons(SMARTPEER_SERVER_PORT);
+    /* get the server ip from sandeep */
+    m_serverAddr.sin_addr.s_addr = inet_addr(serverIP.c_str());
+    memset(m_serverAddr.sin_zero, '\0', sizeof m_serverAddr.sin_zero);
+
+    /*Send message to server*/
+    sendto( nSock,
+        data.c_str(),
+        data.length(),
+        0,
+        (struct sockaddr *)&m_serverAddr,
+        sizeof(sockaddr));
+}
+
+
+
+
 void UDPDatagram::sendDataToServer(string serverIP, string data)
 {
 	
@@ -113,6 +143,19 @@ void UDPDatagram::sendDataToServer(string serverIP, string data)
 	    0,
 	    (struct sockaddr *)&m_serverAddr,
 	    sizeof(sockaddr));
+
+    cout << "\r Started Receiving Data from Server \r\n";
+    int nBytes = recvfrom(serverSocket->m_sockFD,
+    serverSocket->m_buffer,
+    BUFFER_SIZE,
+    0,
+    (struct sockaddr *)&serverSocket->m_serverStorage,
+    &serverSocket->m_addr_size);
+    cout << serverSocket->m_buffer << endl;
+
+    /* Send the packet to Proto Buff for Decoding the incoming Message */
+    processDataComingFromSocket(serverSocket->m_buffer, strlen(serverSocket->m_buffer));
+
 
     /* sandeep - Replace Below constant string with data from pDataBuffer*/
     //memcpy(serverSocket->m_buffer, data.c_str(), data.length());
@@ -193,7 +236,7 @@ void *UDPDatagram::recvData (void)
 	tv.tv_sec = 10;
 	tv.tv_usec = 0;
 	FD_ZERO(&rfds);
-	FD_SET(serverSocket->m_sockFD, &rfds);
+    //FD_SET(serverSocket->m_sockFD, &rfds);
 	FD_SET(clientSocket->m_sockFD, &rfds);
 
 	/*  
@@ -201,14 +244,15 @@ void *UDPDatagram::recvData (void)
          * Data can come from server of Peer Client.
          * Address and port of requesting client will be stored on m_serverStorage variable 
          */
-        if(-1 == select(5, &rfds, NULL, NULL, &tv))
+        if(-1 == select(1024 , &rfds, NULL, NULL, &tv))
         {
             perror("select()");
         }
 	else if(FD_ISSET(serverSocket->m_sockFD, &rfds))
 	{
+
             cout << "\r Started Receiving Data from Server \r\n";
-	    nBytes = recvfrom(serverSocket->m_sockFD, 
+            nBytes = recvfrom(serverSocket->m_sockFD,
 		    serverSocket->m_buffer,
 		    BUFFER_SIZE,
 		    0,
@@ -231,7 +275,8 @@ void *UDPDatagram::recvData (void)
             cout << clientSocket->m_buffer << endl;
 
             /* Send the packet to Proto Buff for Decoding the incoming Message */
-            processDataComingFromSocket(clientSocket->m_buffer, strlen(clientSocket->m_buffer));          
+            //processDataComingFromSocket(clientSocket->m_buffer, strlen(clientSocket->m_buffer));
+            processDataComingFromSocket(clientSocket->m_buffer, nBytes);
 	}
 
         cout << " Waiting On Select Call " << endl;
